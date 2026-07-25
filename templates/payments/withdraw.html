@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Retirar - Royal Casino Core</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Roboto, Tahoma, sans-serif;
+            background: radial-gradient(circle at 20% 0%, #2B028C 0%, transparent 45%),
+                        radial-gradient(circle at 100% 30%, #F44CFC 0%, transparent 35%),
+                        #0E000E;
+            min-height: 100vh;
+            color: #fff;
+        }
+        .screen { max-width: 480px; margin: 0 auto; min-height: 100vh; padding: 20px 18px 40px; }
+        .back-link { display: inline-flex; align-items: center; gap: 6px; color: #cfcbe8; text-decoration: none; font-size: 0.85rem; margin-bottom: 14px; }
+
+        .title { text-align: center; font-size: 1.4rem; font-weight: 800; font-style: italic; color: #FF5A7A; margin-bottom: 4px; }
+        .subtitle { text-align: center; font-size: 0.78rem; color: #cfcbe8; margin-bottom: 18px; }
+
+        .balance-card { border: 1px solid #46407C; border-radius: 16px; padding: 18px; background: rgba(20,5,40,0.55); text-align: center; margin-bottom: 14px; }
+        .balance-label { font-size: 0.75rem; color: #9c96c4; }
+        .balance-amount { font-size: 2rem; font-weight: 800; color: #01F9BE; margin: 6px 0; }
+        .balance-note { font-size: 0.68rem; color: #9c96c4; }
+
+        .section { border: 1px solid #46407C; border-radius: 16px; padding: 16px; background: rgba(20,5,40,0.55); margin-bottom: 14px; }
+        .section-label { font-size: 0.75rem; font-weight: 700; color: #FFD36E; margin-bottom: 10px; }
+
+        .amount-input {
+            width: 100%; padding: 14px; text-align: center; font-size: 1.4rem; font-weight: 800;
+            background: rgba(255,255,255,0.06); border: 1px solid #46407C; border-radius: 12px; color: #fff; margin-bottom: 10px;
+        }
+        .amount-input:focus { outline: none; border-color: #FF5A7A; }
+
+        .quick-amounts { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+        .quick-amount-btn {
+            padding: 8px; border-radius: 10px; border: 1px solid #46407C; background: rgba(255,255,255,0.04);
+            color: #fff; font-weight: 700; font-size: 0.82rem; cursor: pointer;
+        }
+        .quick-amount-btn.active { background: #FF5A7A; border-color: #FF5A7A; }
+
+        label { display: block; font-size: 0.72rem; color: #cfcbe8; margin-bottom: 6px; font-weight: 600; }
+        select, input[type="text"] {
+            width: 100%; padding: 11px 14px; margin-bottom: 12px;
+            background: rgba(255,255,255,0.06); border: 1px solid #46407C; border-radius: 10px; color: #fff; font-size: 0.85rem;
+        }
+        select option { background: #1a0a2e; }
+
+        .fee-row { display: flex; justify-content: space-between; font-size: 0.8rem; margin-bottom: 6px; color: #cfcbe8; }
+        .fee-row.total { border-top: 1px solid #46407C; padding-top: 8px; font-weight: 800; color: #01F9BE; font-size: 0.9rem; }
+
+        .notice { font-size: 0.7rem; color: #FFD36E; text-align: center; margin-bottom: 14px; }
+
+        .btn-submit {
+            width: 100%; padding: 14px; border: none; border-radius: 12px;
+            background: linear-gradient(135deg, #FF5A7A, #C21E4E);
+            color: #fff; font-weight: 800; font-size: 1rem; cursor: pointer; margin-bottom: 10px;
+        }
+        .btn-submit:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        .message { padding: 10px 14px; border-radius: 10px; font-size: 0.8rem; text-align: center; margin-bottom: 14px; display: none; }
+        .message.error { background: rgba(244,76,252,0.12); border: 1px solid #F44CFC; color: #ff9ad4; }
+        .message.success { background: rgba(1,249,190,0.1); border: 1px solid #01F9BE; color: #01F9BE; }
+        .message.show { display: block; }
+    </style>
+</head>
+<body>
+    {% csrf_token %}
+    <div class="screen">
+        <a href="/lobby/" class="back-link">‹ Volver al lobby</a>
+        <div class="title">🏦 RETIRAR FONDOS</div>
+        <div class="subtitle">Solicita un retiro seguro a tu cuenta bancaria</div>
+
+        <div id="message" class="message"></div>
+
+        <div class="balance-card">
+            <div class="balance-label">TU BALANCE DISPONIBLE</div>
+            <div class="balance-amount" id="balanceDisplay">$0.00</div>
+            <div class="balance-note">Mínimo $10 · Máximo $50,000 por retiro</div>
+        </div>
+
+        <div class="section">
+            <div class="section-label">CANTIDAD A RETIRAR (USD)</div>
+            <input type="number" class="amount-input" id="amount" min="10" step="1" value="50">
+            <div class="quick-amounts">
+                <button type="button" class="quick-amount-btn" data-amount="50">$50</button>
+                <button type="button" class="quick-amount-btn active" data-amount="100">$100</button>
+                <button type="button" class="quick-amount-btn" data-amount="500">$500</button>
+            </div>
+        </div>
+
+        <div class="section">
+            <div class="section-label">🏦 DATOS BANCARIOS</div>
+            <label for="bankName">Banco</label>
+            <select id="bankName">
+                <option value="bancolombia">Bancolombia</option>
+                <option value="bbva">BBVA</option>
+                <option value="davivienda">Davivienda</option>
+                <option value="santander">Santander</option>
+                <option value="otros">Otros</option>
+            </select>
+            <label for="accountNumber">Número de cuenta</label>
+            <input type="text" id="accountNumber" placeholder="Número de cuenta">
+            <label for="accountHolder">Titular de la cuenta</label>
+            <input type="text" id="accountHolder" placeholder="Nombre del titular">
+        </div>
+
+        <div class="fee-row"><span>Monto solicitado:</span><span id="feeAmount">$100.00</span></div>
+        <div class="fee-row total"><span>Recibirás:</span><span id="feeTotal">$100.00</span></div>
+
+        <div class="notice">⚠️ Los retiros se procesan en 1-3 días hábiles y requieren verificación KYC</div>
+
+        <button class="btn-submit" id="submitBtn">SOLICITAR RETIRO</button>
+    </div>
+
+    <script>
+        let selectedAmount = 100;
+        let currentBalance = 0;
+
+        function getCookie(name) {
+            const value = `; ${document.cookie}`;
+            const parts = value.split(`; ${name}=`);
+            if (parts.length === 2) return parts.pop().split(';').shift();
+            return '';
+        }
+
+        async function loadBalance() {
+            try {
+                const res = await fetch('/api/users/profile/');
+                if (res.ok) {
+                    const data = await res.json();
+                    currentBalance = parseFloat(data.balance);
+                    document.getElementById('balanceDisplay').textContent = `$${currentBalance.toFixed(2)}`;
+                }
+            } catch (e) {}
+        }
+
+        document.querySelectorAll('.quick-amount-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                selectedAmount = parseFloat(btn.dataset.amount);
+                document.getElementById('amount').value = selectedAmount;
+                updateFees();
+                document.querySelectorAll('.quick-amount-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+            });
+        });
+
+        document.getElementById('amount').addEventListener('input', updateFees);
+
+        function updateFees() {
+            selectedAmount = parseFloat(document.getElementById('amount').value) || 0;
+            document.getElementById('feeAmount').textContent = `$${selectedAmount.toFixed(2)}`;
+            document.getElementById('feeTotal').textContent = `$${selectedAmount.toFixed(2)}`;
+        }
+
+        function showMessage(text, type) {
+            const el = document.getElementById('message');
+            el.textContent = text;
+            el.className = `message show ${type}`;
+        }
+
+        async function processWithdraw() {
+            const submitBtn = document.getElementById('submitBtn');
+
+            if (selectedAmount < 10) {
+                showMessage('El monto mínimo de retiro es $10', 'error');
+                return;
+            }
+            if (selectedAmount > currentBalance) {
+                showMessage('No tienes suficiente balance', 'error');
+                return;
+            }
+
+            submitBtn.disabled = true;
+            try {
+                const csrfToken = getCookie('csrftoken');
+                const response = await fetch('/api/payments/withdraw/', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken },
+                    body: JSON.stringify({
+                        amount: selectedAmount,
+                        withdraw_method: 'bank_transfer',
+                        bank_details: {
+                            bank: document.getElementById('bankName').value,
+                            account_number: document.getElementById('accountNumber').value,
+                            account_holder: document.getElementById('accountHolder').value
+                        }
+                    })
+                });
+                const data = await response.json();
+
+                if (response.ok) {
+                    showMessage(data.message || 'Retiro solicitado exitosamente', 'success');
+                    setTimeout(() => window.location.href = '/lobby/', 2000);
+                } else if (response.status === 403 && data.kyc_verified === false) {
+                    showMessage('Debes completar la verificación KYC en tu perfil antes de retirar fondos.', 'error');
+                    submitBtn.disabled = false;
+                } else {
+                    showMessage(data.error || 'Error al procesar el retiro', 'error');
+                    submitBtn.disabled = false;
+                }
+            } catch (e) {
+                showMessage('Error de conexión', 'error');
+                submitBtn.disabled = false;
+            }
+        }
+
+        document.getElementById('submitBtn').addEventListener('click', processWithdraw);
+        loadBalance();
+        updateFees();
+    </script>
+</body>
+</html>

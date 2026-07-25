@@ -1,0 +1,774 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Totem Falls Bonanza - Royal Casino Core</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Roboto, Tahoma, sans-serif;
+            background: #0A1508;
+            min-height: 100vh;
+            color: #fff;
+        }
+        .screen {
+            max-width: 480px;
+            margin: 0 auto;
+            min-height: 100vh;
+            padding-bottom: 96px;
+            position: relative;
+            background: radial-gradient(circle at 20% 0%, rgba(20,89,40,0.45) 0%, transparent 45%),
+                        radial-gradient(circle at 100% 20%, rgba(250,184,64,0.16) 0%, transparent 40%),
+                        linear-gradient(180deg, rgba(10,21,8,0.15) 0%, rgba(10,21,8,0.35) 55%, rgba(10,21,8,0.78) 100%),
+                        url('/static/images/characters/totem_falls_background.png');
+            background-size: auto, auto, auto, cover;
+            background-position: center, center, center, center top;
+            background-repeat: no-repeat;
+        }
+        .top-row { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px 0; }
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            color: #b8ffce;
+            text-decoration: none;
+            font-size: 0.85rem;
+        }
+        .sound-btn {
+            width: 34px; height: 34px;
+            border-radius: 50%;
+            border: 1px solid #3B8B5A;
+            background: rgba(255,255,255,0.06);
+            color: #fff;
+            font-size: 1rem;
+            cursor: pointer;
+        }
+        .title-row { display: flex; align-items: center; justify-content: center; margin: 4px 0 6px; }
+        .title-row img { height: 130px; width: auto; filter: drop-shadow(0 4px 10px rgba(0,0,0,0.55)); }
+
+        .chips-row { display: flex; justify-content: space-between; gap: 8px; padding: 0 16px; margin-bottom: 8px; flex-wrap: wrap; align-items: center; }
+        .chip-billetera {
+            display: inline-flex; align-items: center; gap: 6px;
+            background: #000114; border: 1px solid #FAB840; border-radius: 8px;
+            padding: 6px 10px; font-size: 0.72rem; font-weight: 700; white-space: nowrap;
+        }
+        .chip-billetera .icon-badge { width: 18px; height: 18px; flex-shrink: 0; }
+        .chip-apuesta {
+            display: inline-flex; align-items: center; gap: 6px;
+            background: #123A1F; border: 2px solid #1EC24E; border-radius: 24px;
+            padding: 5px 12px 5px 6px; font-size: 0.72rem; font-weight: 700; white-space: nowrap;
+        }
+        .chip-apuesta .icon-badge {
+            width: 22px; height: 22px; flex-shrink: 0; border-radius: 6px;
+            border: 2px solid #5AFF8F;
+            background: linear-gradient(180deg, #8FFFA3, #1EC24E);
+            display: flex; align-items: center; justify-content: center;
+        }
+        .chip.free {
+            display: none; background: rgba(255,255,255,0.06); border: 1px solid #FFD36E;
+            border-radius: 14px; padding: 6px 12px; font-size: 0.72rem; font-weight: 700;
+            color: #FFD36E; white-space: nowrap;
+        }
+        .chip.free.show { display: inline-flex; animation: tf-pulse 0.8s ease-in-out infinite alternate; }
+
+        .game-area { padding: 0 10px; text-align: center; position: relative; }
+
+        .mascot-wrap {
+            position: absolute; left: -10px; bottom: -6px; z-index: 5;
+            width: 150px; pointer-events: none;
+        }
+        .mascot-wrap img { width: 100%; height: auto; display: block; filter: drop-shadow(0 6px 10px rgba(0,0,0,0.55)); }
+
+        .mascot-wrap-right {
+            position: absolute; right: -8px; bottom: -6px; z-index: 5;
+            width: 130px; pointer-events: none;
+        }
+        .mascot-wrap-right img { width: 100%; height: auto; display: block; filter: drop-shadow(0 6px 10px rgba(0,0,0,0.55)); }
+
+        .machine {
+            width: 100%;
+            max-width: 460px;
+            margin: 4px auto 0;
+            aspect-ratio: 1086 / 1448;
+            background: url('/static/images/characters/totem_falls_board.png') center / 100% 100% no-repeat;
+            filter: drop-shadow(0 0 18px rgba(30,194,78,0.5));
+            position: relative;
+        }
+
+        .grid-wrap {
+            position: absolute;
+            top: 16.4%; bottom: 13.3%; left: 18.23%; right: 18.23%;
+            overflow: hidden;
+        }
+        .col {
+            position: absolute;
+            top: 0;
+            height: 100%;
+            width: calc(100% / 4);
+        }
+        .sym {
+            position: absolute;
+            left: 1px;
+            right: 1px;
+            height: calc(100% / 6);
+            box-sizing: border-box;
+            padding: 1px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: top 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        .sym .sym-box {
+            width: 100%; height: 100%;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        .sym img {
+            width: 100%; height: 100%; object-fit: contain;
+            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));
+        }
+        .sym.winning .sym-box {
+            background: rgba(90,255,143,0.18);
+            box-shadow: 0 0 0 2px #5AFF8F, 0 0 16px 4px rgba(90,255,143,0.9);
+            animation: tf-pulse 0.6s ease-in-out infinite alternate;
+        }
+        .sym.clearing {
+            transition: none;
+        }
+        .sym.clearing img {
+            animation: tf-clear 0.3s ease-in forwards;
+        }
+        @keyframes tf-clear {
+            from { transform: scale(1); opacity: 1; }
+            to { transform: scale(1.5) rotate(8deg); opacity: 0; }
+        }
+        @keyframes tf-pulse {
+            from { box-shadow: 0 0 0 2px #FFD36E, 0 0 10px 2px rgba(255,211,110,0.6); }
+            to { box-shadow: 0 0 0 2px #FFD36E, 0 0 22px 8px rgba(255,211,110,1); }
+        }
+
+        #neonSvg {
+            position: absolute; inset: 0; width: 100%; height: 100%;
+            pointer-events: none; z-index: 3; overflow: visible;
+        }
+        .neon-line {
+            fill: none;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            filter: drop-shadow(0 0 4px currentColor) drop-shadow(0 0 10px currentColor);
+            animation: neon-flicker 1s ease-in-out infinite alternate;
+        }
+        @keyframes neon-flicker {
+            from { opacity: 0.75; }
+            to { opacity: 1; }
+        }
+
+        .step-banner {
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%) scale(0.8);
+            background: rgba(4,12,4,0.9);
+            border: 2px solid #FFD36E;
+            border-radius: 16px;
+            padding: 10px 22px;
+            font-weight: 900;
+            font-size: 1.25rem;
+            color: #FFD36E;
+            text-shadow: 0 0 10px rgba(255,211,110,0.9);
+            box-shadow: 0 0 30px rgba(255,211,110,0.7);
+            z-index: 10;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.25s ease, transform 0.25s ease;
+            white-space: nowrap;
+            text-align: center;
+        }
+        .step-banner.show { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+        .step-banner .avalanche-tag {
+            display: block;
+            font-size: 0.7rem;
+            color: #5AFF8F;
+            text-shadow: 0 0 8px rgba(90,255,143,0.9);
+            margin-top: 2px;
+        }
+
+        .win-banner {
+            display: none;
+            position: absolute;
+            top: 2px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 20;
+            width: max-content;
+            max-width: 220px;
+            padding: 6px 10px;
+            border-radius: 12px;
+            border: 2px solid #5AFF8F;
+            background: rgba(4,12,4,0.9);
+            box-shadow: 0 0 18px rgba(90,255,143,0.6);
+            text-align: center;
+        }
+        .win-banner.show { display: block; animation: tf-pulse-green 0.9s ease-in-out infinite alternate; }
+        @keyframes tf-pulse-green {
+            from { box-shadow: 0 0 10px rgba(90,255,143,0.5); }
+            to { box-shadow: 0 0 20px rgba(90,255,143,1); }
+        }
+        .win-banner .label { font-size: 0.58rem; letter-spacing: 0.06em; color: #a8e8bb; font-weight: 700; }
+        .win-banner .amount { font-size: 1.15rem; font-weight: 900; color: #5AFF8F; text-shadow: 0 0 8px rgba(90,255,143,0.9); }
+        .win-banner .avalanche-line { margin-top: 4px; font-size: 0.62rem; font-weight: 800; color: #FFD36E; }
+
+        .scatter-banner, .freespins-banner {
+            display: none; margin-top: 10px; padding: 10px; border-radius: 14px;
+            font-weight: 800; font-style: italic; text-align: center;
+        }
+        .scatter-banner { border: 2px solid #FFD36E; background: rgba(255,211,110,0.12); box-shadow: 0 0 20px rgba(255,211,110,0.5); color: #FFD36E; }
+        .freespins-banner { border: 2px solid #1EC24E; background: rgba(30,194,78,0.15); box-shadow: 0 0 20px rgba(30,194,78,0.6); color: #8FFFA3; }
+        .scatter-banner.show, .freespins-banner.show { display: block; animation: tf-pulse 0.8s ease-in-out infinite alternate; }
+
+        .bet-row { display: flex; align-items: center; justify-content: center; gap: 10px; margin: 12px 0 4px; }
+        .bet-btn {
+            width: 34px; height: 34px; border-radius: 50%;
+            border: 1px solid #3B8B5A; background: rgba(255,255,255,0.06);
+            color: #fff; font-size: 1.1rem; cursor: pointer;
+        }
+        .bet-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+        .bet-amount { font-size: 1.1rem; font-weight: 800; min-width: 60px; }
+
+        .spin-btn {
+            width: 82%; max-width: 360px; aspect-ratio: 1128 / 393;
+            margin: 14px auto 0;
+            display: flex; align-items: center; justify-content: center;
+            border: none; border-radius: 16px;
+            background: url('/static/images/characters/totem_falls_spin_button.png') center / contain no-repeat;
+            cursor: pointer;
+            filter: drop-shadow(0 6px 14px rgba(30,194,78,0.6));
+            position: relative;
+        }
+        .spin-btn-label {
+            font-weight: 800; font-size: 0.85rem; color: #FFD36E; text-align: center;
+            background: rgba(0,0,0,0.65); border-radius: 16px; width: 100%; height: 100%;
+            display: none; align-items: center; justify-content: center; padding: 0 8px;
+        }
+        .spin-btn.free-mode .spin-btn-label { display: flex; }
+        .spin-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+        .hint-text { font-size: 0.66rem; color: #b3d8bb; margin-top: 6px; }
+        .result-msg { margin-top: 8px; font-size: 0.85rem; font-weight: 700; min-height: 18px; }
+        .result-msg.win { color: #5AFF8F; }
+        .result-msg.loss { color: #ffb066; }
+
+        .bottom-nav {
+            position: fixed; bottom: 10px; left: 50%; transform: translateX(-50%);
+            width: calc(100% - 32px); max-width: 448px;
+            display: flex; justify-content: space-around; align-items: center;
+            padding: 8px 6px; background: #0D2C10; border: 1px solid #3B8B5A; border-radius: 24px;
+            z-index: 50;
+        }
+        .nav-item { display: flex; align-items: center; justify-content: center; flex: 1; }
+        .nav-item img { height: 40px; width: auto; filter: grayscale(1) brightness(1.6) opacity(0.55); }
+    </style>
+</head>
+<body>
+    {% csrf_token %}
+    <div class="screen">
+        <div class="top-row">
+            <a href="/lobby/" class="back-link">‹ Volver al lobby</a>
+            <button class="sound-btn" id="soundBtn" onclick="toggleSound()">🔊</button>
+        </div>
+        <div class="title-row">
+            <img src="/static/images/characters/totem_falls_title.png" alt="Totem Falls Bonanza">
+        </div>
+
+        <div class="chips-row">
+            <span class="chip-billetera">
+                <svg class="icon-badge" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <rect x="2" y="6" width="20" height="14" rx="2.5" stroke="#FAB840" stroke-width="1.8"/>
+                    <path d="M2 10h20" stroke="#FAB840" stroke-width="1.8"/>
+                    <circle cx="17" cy="15" r="1.6" fill="#FAB840"/>
+                </svg>
+                BILLETERA: $<span id="wallet">0.00</span>
+            </span>
+            <span class="chip-apuesta">
+                <span class="icon-badge">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <circle cx="12" cy="12" r="8" stroke="#123A1F" stroke-width="2"/>
+                        <circle cx="12" cy="12" r="3.5" fill="#123A1F"/>
+                    </svg>
+                </span>
+                APUESTA: $<span id="betDisplay">1.00</span>
+            </span>
+            <span class="chip free" id="freeSpinsChip">GIROS GRATIS: <span id="freeSpinsCount">0</span></span>
+        </div>
+
+        <div class="game-area">
+            <div class="mascot-wrap"><img src="/static/images/characters/totem_falls_mascot2.png" alt=""></div>
+            <div class="mascot-wrap-right"><img src="/static/images/characters/totem_falls_mascot_skull.png" alt=""></div>
+
+            <div class="machine">
+                <div class="grid-wrap" id="gridWrap">
+                    <svg id="neonSvg"></svg>
+                    <div class="step-banner" id="stepBanner"></div>
+                </div>
+            </div>
+
+            <div class="win-banner" id="winBanner">
+                <div class="label">GANANCIA TOTAL</div>
+                <div class="amount" id="winAmount">$0.00</div>
+                <div class="avalanche-line" id="avalancheLine" style="display:none;"></div>
+            </div>
+
+            <div class="scatter-banner" id="scatterBanner">¡3+ TÓTEMS SAGRADOS ACTIVAN LOS GIROS GRATIS!</div>
+            <div class="freespins-banner" id="freeSpinsBanner">¡GANASTE GIROS GRATIS!</div>
+
+            <button class="spin-btn" id="spinBtn" onclick="spin()">
+                <span class="spin-btn-label" id="spinBtnLabel"></span>
+            </button>
+
+            <div class="bet-row">
+                <button class="bet-btn" id="betMinus" onclick="changeBet(-1)">-</button>
+                <span class="bet-amount">$<span id="betAmount">1</span></span>
+                <button class="bet-btn" id="betPlus" onclick="changeBet(1)">+</button>
+            </div>
+            <div class="hint-text">Los tótems caen en cascada: cada avalancha aumenta el multiplicador</div>
+
+            <div class="result-msg" id="resultMsg"></div>
+        </div>
+    </div>
+
+    <div class="bottom-nav">
+        <a href="/lobby/" class="nav-item"><img src="/static/images/icons/nav_lobby.png" alt="Lobby"></a>
+        <a href="/promos/" class="nav-item"><img src="/static/images/icons/nav_promos.png" alt="Promos"></a>
+        <a href="/vip/" class="nav-item"><img src="/static/images/icons/nav_vip.png" alt="VIP"></a>
+        <a href="/profile/" class="nav-item"><img src="/static/images/icons/nav_perfil.png" alt="Perfil"></a>
+    </div>
+
+    <script>
+        let betAmount = 1;
+        let spinning = false;
+        let freeSpinsRemaining = 0;
+
+        const COLS = 4, ROWS = 6;
+
+        const SYMBOL_IMAGES = {
+            totem_3: '/static/images/symbols/totem_3.png',
+            totem_5: '/static/images/symbols/totem_5.png',
+            totem_2: '/static/images/symbols/totem_2.png',
+            totem_4: '/static/images/symbols/totem_4.png',
+            totem_1: '/static/images/symbols/totem_1.png',
+            totem_6: '/static/images/symbols/totem_6.png',
+            totem_wild: '/static/images/symbols/totem_wild.png',
+            totem_scatter: '/static/images/symbols/totem_scatter.png',
+            totem_multiplicador: '/static/images/symbols/totem_multiplicador.png'
+        };
+        const SYMBOL_KEYS = Object.keys(SYMBOL_IMAGES);
+
+        const NEON_COLORS = ['#FFD36E', '#5AFF8F', '#FF5A7A', '#41DBFD', '#FAB840', '#01F9BE'];
+
+        const INITIAL_GRID = (() => {
+            const g = [];
+            for (let r = 0; r < ROWS; r++) {
+                const row = [];
+                for (let c = 0; c < COLS; c++) row.push(SYMBOL_KEYS[Math.floor(Math.random() * (SYMBOL_KEYS.length - 3))]);
+                g.push(row);
+            }
+            return g;
+        })();
+
+        /* ---------- Sonido (Web Audio API, sintetizado, sin archivos externos) ---------- */
+        /* Efectos de caida/impacto de roca: ruido blanco filtrado (crash) + golpe grave (thud) */
+        let audioCtx = null;
+        let muted = localStorage.getItem('totemFallsMuted') === '1';
+
+        function getCtx() {
+            if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            return audioCtx;
+        }
+        function beep(freq, duration, type, gainValue, delay) {
+            if (muted) return;
+            const ctx = getCtx();
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.type = type || 'sine';
+            osc.frequency.value = freq;
+            gain.gain.value = gainValue || 0.15;
+            osc.connect(gain).connect(ctx.destination);
+            const startTime = ctx.currentTime + (delay || 0);
+            osc.start(startTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, startTime + duration);
+            osc.stop(startTime + duration + 0.02);
+        }
+        function rockCrash(gainValue, duration, delay) {
+            if (muted) return;
+            const ctx = getCtx();
+            const dur = duration || 0.25;
+            const bufferSize = Math.max(1, Math.floor(ctx.sampleRate * dur));
+            const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+            const data = buffer.getChannelData(0);
+            for (let i = 0; i < bufferSize; i++) data[i] = (Math.random() * 2 - 1) * (1 - i / bufferSize);
+            const noise = ctx.createBufferSource();
+            noise.buffer = buffer;
+            const filter = ctx.createBiquadFilter();
+            filter.type = 'lowpass';
+            filter.frequency.value = 900;
+            const gain = ctx.createGain();
+            const startTime = ctx.currentTime + (delay || 0);
+            gain.gain.setValueAtTime(gainValue || 0.3, startTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, startTime + dur);
+            noise.connect(filter).connect(gain).connect(ctx.destination);
+            noise.start(startTime);
+            noise.stop(startTime + dur + 0.02);
+        }
+        function playSpinSound() { rockCrash(0.18, 0.3, 0); beep(85, 0.3, 'sine', 0.2, 0.03); }
+        function playTumbleSound() { rockCrash(0.32, 0.22, 0); beep(65, 0.28, 'sine', 0.22, 0); }
+        function playAvalancheSound(mult) {
+            const hits = Math.min(Math.max(mult, 1), 5);
+            for (let i = 0; i < hits; i++) { rockCrash(0.22, 0.16, i * 0.05); }
+        }
+        function playWinSound() { [261.63, 329.63, 392, 523.25].forEach((f, i) => beep(f, 0.25, 'triangle', 0.2, i * 0.1)); rockCrash(0.2, 0.3, 0); }
+        function playFreeSpinsSound() { [196, 261.63, 329.63, 392, 523.25].forEach((f, i) => beep(f, 0.3, 'triangle', 0.22, i * 0.1)); }
+        function playLossSound() { beep(90, 0.35, 'sine', 0.15, 0); }
+
+        function toggleSound() {
+            muted = !muted;
+            localStorage.setItem('totemFallsMuted', muted ? '1' : '0');
+            document.getElementById('soundBtn').textContent = muted ? '🔇' : '🔊';
+        }
+
+        const ROW_PCT = 100 / ROWS;
+        let columns = []; // columns[col] = [{el, symbol}, ...] top-to-bottom, mirrors current visual rows
+
+        function makeSymEl(symbol, row) {
+            const el = document.createElement('div');
+            el.className = 'sym';
+            el.style.top = `${row * ROW_PCT}%`;
+            el.innerHTML = `<div class="sym-box"><img src="${SYMBOL_IMAGES[symbol]}" alt="${symbol}"></div>`;
+            return el;
+        }
+
+        function renderGrid(grid) {
+            const wrap = document.getElementById('gridWrap');
+            wrap.querySelectorAll('.col').forEach(el => el.remove());
+            columns = [];
+
+            for (let c = 0; c < COLS; c++) {
+                const col = document.createElement('div');
+                col.className = 'col';
+                col.style.left = `${(c * 100) / COLS}%`;
+                wrap.appendChild(col);
+
+                const colEntries = [];
+                for (let r = 0; r < ROWS; r++) {
+                    const symbol = grid[r][c];
+                    const el = makeSymEl(symbol, r);
+                    col.appendChild(el);
+                    colEntries.push({ el, symbol });
+                }
+                columns.push(colEntries);
+            }
+        }
+
+        function elAt(row, col) {
+            const entry = columns[col] && columns[col][row];
+            return entry ? entry.el : null;
+        }
+
+        async function dropInGrid(grid) {
+            const wrap = document.getElementById('gridWrap');
+            wrap.querySelectorAll('.col').forEach(el => el.remove());
+            columns = [];
+
+            for (let c = 0; c < COLS; c++) {
+                const col = document.createElement('div');
+                col.className = 'col';
+                col.style.left = `${(c * 100) / COLS}%`;
+                wrap.appendChild(col);
+
+                const colEntries = [];
+                for (let r = 0; r < ROWS; r++) {
+                    const symbol = grid[r][c];
+                    const el = makeSymEl(symbol, r - ROWS); // arranca apilado arriba del tablero
+                    col.appendChild(el);
+                    colEntries.push({ el, symbol });
+                }
+                columns.push(colEntries);
+            }
+
+            void wrap.offsetHeight; // fuerza reflow para que la transición de caída se dispare
+
+            const STAGGER_MS = 70; // cada columna empieza a caer un poco después que la anterior (izquierda -> derecha)
+            columns.forEach((colEntries, c) => {
+                setTimeout(() => {
+                    colEntries.forEach((entry, r) => {
+                        entry.el.style.top = `${r * ROW_PCT}%`;
+                    });
+                    rockCrash(0.12, 0.15, 0);
+                }, c * STAGGER_MS);
+            });
+
+            await sleep((COLS - 1) * STAGGER_MS + 550);
+        }
+
+        function drawNeonLines(cellsBySymbol) {
+            const svg = document.getElementById('neonSvg');
+            svg.innerHTML = '';
+            const wrap = document.getElementById('gridWrap');
+            const rect = wrap.getBoundingClientRect();
+            let colorIdx = 0;
+
+            Object.values(cellsBySymbol).forEach(cells => {
+                if (cells.length < 2) { colorIdx++; return; }
+                const color = NEON_COLORS[colorIdx % NEON_COLORS.length];
+                colorIdx++;
+                const points = cells.map(({row, col}) => {
+                    const el = elAt(row, col);
+                    if (!el) return null;
+                    const r = el.getBoundingClientRect();
+                    return [r.left - rect.left + r.width / 2, r.top - rect.top + r.height / 2];
+                }).filter(Boolean);
+                if (points.length < 2) return;
+
+                const path = document.createElementNS('http://www.w3.org/2000/svg', 'polyline');
+                path.setAttribute('points', points.map(p => p.join(',')).join(' '));
+                path.setAttribute('stroke', color);
+                path.setAttribute('stroke-width', '3');
+                path.classList.add('neon-line');
+                path.style.color = color;
+                svg.appendChild(path);
+            });
+        }
+
+        function clearNeonLines() {
+            document.getElementById('neonSvg').innerHTML = '';
+        }
+
+        function showStepBanner(text, avalancheText) {
+            const banner = document.getElementById('stepBanner');
+            banner.innerHTML = avalancheText ? `${text}<span class="avalanche-tag">${avalancheText}</span>` : text;
+            banner.classList.add('show');
+        }
+        function hideStepBanner() {
+            document.getElementById('stepBanner').classList.remove('show');
+        }
+
+        function sleep(ms) { return new Promise(res => setTimeout(res, ms)); }
+
+        function updateBetControls() {
+            const isFree = freeSpinsRemaining > 0;
+            document.getElementById('betMinus').disabled = isFree;
+            document.getElementById('betPlus').disabled = isFree;
+            const spinBtn = document.getElementById('spinBtn');
+            document.getElementById('spinBtnLabel').textContent = isFree ? `GRATIS (${freeSpinsRemaining})` : '';
+            spinBtn.classList.toggle('free-mode', isFree);
+            const chip = document.getElementById('freeSpinsChip');
+            chip.classList.toggle('show', isFree);
+            document.getElementById('freeSpinsCount').textContent = freeSpinsRemaining;
+        }
+
+        function changeBet(delta) {
+            if (freeSpinsRemaining > 0) return;
+            betAmount = Math.max(1, betAmount + delta);
+            document.getElementById('betAmount').textContent = betAmount;
+            document.getElementById('betDisplay').textContent = betAmount.toFixed(2);
+        }
+
+        async function loadBalance() {
+            try {
+                const res = await fetch('/api/users/profile/');
+                if (res.ok) {
+                    const data = await res.json();
+                    document.getElementById('wallet').textContent = parseFloat(data.balance).toFixed(2);
+                }
+            } catch (e) {}
+        }
+
+        async function loadFreeSpins() {
+            try {
+                const res = await fetch('/api/games/totem_falls_free_spins/');
+                if (res.ok) {
+                    const data = await res.json();
+                    freeSpinsRemaining = data.free_spins_remaining || 0;
+                    updateBetControls();
+                }
+            } catch (e) {}
+        }
+
+        async function playTumbleStep(step) {
+            const cellsBySymbol = {};
+            step.winners.forEach(w => { cellsBySymbol[w.symbol] = []; });
+            step.cleared_cells.forEach(({row, col}) => {
+                const el = elAt(row, col);
+                if (el) el.classList.add('winning');
+                cellsBySymbol[columns[col][row].symbol]?.push({row, col});
+            });
+
+            drawNeonLines(cellsBySymbol);
+            playTumbleSound();
+            if (step.avalanche_multiplier > 1) playAvalancheSound(step.avalanche_multiplier);
+
+            const stepTotal = step.step_win;
+            const avalancheText = step.avalanche_multiplier > 1 ? `AVALANCHA x${step.avalanche_multiplier}` : '';
+            showStepBanner(`+$${stepTotal.toFixed(2)}`, avalancheText);
+
+            await sleep(700);
+
+            hideStepBanner();
+            clearNeonLines();
+
+            // Marca las celdas ganadoras como "cleared" por columna y anima su desaparición
+            const clearedByCol = Array.from({ length: COLS }, () => new Set());
+            step.cleared_cells.forEach(({row, col}) => clearedByCol[col].add(row));
+
+            columns.forEach((colEntries, col) => {
+                colEntries.forEach((entry, row) => {
+                    if (clearedByCol[col].has(row)) entry.el.classList.add('clearing');
+                });
+            });
+
+            await sleep(300);
+
+            // Quita del DOM y del estado los símbolos eliminados; las columnas quedan solo con sobrevivientes
+            columns = columns.map((colEntries, col) => {
+                const survivors = [];
+                colEntries.forEach((entry, row) => {
+                    if (clearedByCol[col].has(row)) {
+                        entry.el.remove();
+                    } else {
+                        survivors.push(entry);
+                    }
+                });
+                return survivors;
+            });
+
+            // Los sobrevivientes caen a las filas inferiores (desliza suavemente vía transition de "top")
+            columns.forEach((survivors, col) => {
+                const missing = ROWS - survivors.length;
+                survivors.forEach((entry, i) => {
+                    entry.el.style.top = `${(missing + i) * ROW_PCT}%`;
+                });
+            });
+
+            // Los símbolos nuevos entran por arriba y caen hasta ocupar las filas superiores vacías
+            for (let col = 0; col < COLS; col++) {
+                const survivors = columns[col];
+                const missing = ROWS - survivors.length;
+                const colEl = document.querySelectorAll('.col')[col];
+                const newEntries = [];
+
+                for (let i = 0; i < missing; i++) {
+                    const symbol = step.grid_after[i][col];
+                    const el = makeSymEl(symbol, i - missing);
+                    colEl.appendChild(el);
+                    newEntries.push({ el, symbol });
+                }
+
+                // Fuerza el reflow antes de fijar la posición final para que la transición se dispare
+                void colEl.offsetHeight;
+                newEntries.forEach((entry, i) => {
+                    entry.el.style.top = `${i * ROW_PCT}%`;
+                });
+
+                columns[col] = [...newEntries, ...survivors];
+            }
+
+            rockCrash(0.15, 0.2, 0.1);
+            await sleep(450);
+        }
+
+        async function spin() {
+            if (spinning) return;
+            spinning = true;
+            getCtx();
+
+            const btn = document.getElementById('spinBtn');
+            const resultMsg = document.getElementById('resultMsg');
+            const scatterBanner = document.getElementById('scatterBanner');
+            const freeSpinsBanner = document.getElementById('freeSpinsBanner');
+            const winBanner = document.getElementById('winBanner');
+            const avalancheLine = document.getElementById('avalancheLine');
+            btn.disabled = true;
+            resultMsg.textContent = '';
+            scatterBanner.classList.remove('show');
+            freeSpinsBanner.classList.remove('show');
+            winBanner.classList.remove('show');
+            avalancheLine.style.display = 'none';
+            clearNeonLines();
+            playSpinSound();
+
+            try {
+                const token = document.querySelector('[name="csrfmiddlewaretoken"]')?.value || '';
+                const response = await fetch('/api/games/play_totem_falls/', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRFToken': token },
+                    body: JSON.stringify({ bet_amount: betAmount })
+                });
+                const data = await response.json();
+
+                if (!response.ok) {
+                    resultMsg.textContent = data.error || 'Error al girar';
+                    resultMsg.className = 'result-msg loss';
+                    btn.disabled = false;
+                    spinning = false;
+                    return;
+                }
+
+                const gr = data.game_result;
+                await dropInGrid(gr.initial_grid);
+                await sleep(150);
+
+                for (const step of gr.tumbles) {
+                    await playTumbleStep(step);
+                    await sleep(150);
+                }
+
+                document.getElementById('wallet').textContent = parseFloat(data.balance).toFixed(2);
+                freeSpinsRemaining = data.free_spins_remaining || 0;
+                updateBetControls();
+
+                if (data.free_spins_awarded > 0) {
+                    scatterBanner.classList.add('show');
+                    freeSpinsBanner.textContent = data.is_free_spin
+                        ? `¡+${data.free_spins_awarded} GIROS GRATIS ADICIONALES!`
+                        : `¡GANASTE ${data.free_spins_awarded} GIROS GRATIS!`;
+                    freeSpinsBanner.classList.add('show');
+                    playFreeSpinsSound();
+                }
+
+                if (gr.payout > 0) {
+                    document.getElementById('winAmount').textContent = `$${gr.payout.toFixed(2)}`;
+                    if (gr.max_avalanche > 1) {
+                        avalancheLine.style.display = 'block';
+                        avalancheLine.textContent = `🪨 MULTIPLICADOR MÁXIMO x${gr.max_avalanche} 🪨`;
+                    }
+                    winBanner.classList.add('show');
+                    resultMsg.textContent = `¡Ganaste $${gr.payout.toFixed(2)}!`;
+                    resultMsg.className = 'result-msg win';
+                    playWinSound();
+                } else {
+                    resultMsg.textContent = data.is_free_spin ? 'Sin suerte en este giro gratis, ¡sigue jugando!' : 'Sin suerte esta vez, ¡vuelve a intentar!';
+                    resultMsg.className = 'result-msg loss';
+                    playLossSound();
+                }
+
+                btn.disabled = false;
+                spinning = false;
+            } catch (e) {
+                btn.disabled = false;
+                spinning = false;
+                resultMsg.textContent = 'Error de conexión';
+                resultMsg.className = 'result-msg loss';
+            }
+        }
+
+        document.getElementById('soundBtn').textContent = muted ? '🔇' : '🔊';
+        renderGrid(INITIAL_GRID);
+        loadBalance();
+        loadFreeSpins();
+    </script>
+</body>
+</html>

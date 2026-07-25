@@ -1,0 +1,23 @@
+<svg viewBox="0 0 128 128" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="persGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#741AC0;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#F44CFC;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  <!-- Background -->
+  <circle cx="64" cy="64" r="60" fill="url(#persGrad)" opacity="0.2" stroke="url(#persGrad)" stroke-width="2"/>
+  <!-- Wizard hat -->
+  <polygon points="64,15 45,35 83,35" fill="#741AC0" stroke="#F44CFC" stroke-width="1"/>
+  <polygon points="64,30 50,35 78,35" fill="#F44CFC" stroke="#741AC0" stroke-width="1"/>
+  <!-- Head -->
+  <circle cx="64" cy="55" r="18" fill="#F44CFC" stroke="#741AC0" stroke-width="2"/>
+  <!-- Eyes -->
+  <circle cx="58" cy="50" r="3" fill="#080254"/>
+  <circle cx="70" cy="50" r="3" fill="#080254"/>
+  <!-- Robe -->
+  <path d="M 50 70 L 55 95 L 64 90 L 73 95 L 78 70 Z" fill="#741AC0" stroke="#F44CFC" stroke-width="1.5"/>
+  <!-- Staff -->
+  <line x1="80" y1="65" x2="95" y2="45" stroke="#F44CFC" stroke-width="2"/>
+  <star cx="95" cy="45" r="6" fill="#741AC0" stroke="#F44CFC" stroke-width="1"/>
+</svg>

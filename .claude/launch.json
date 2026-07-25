@@ -1,0 +1,15 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "Casino Django",
+      "runtimeExecutable": "python",
+      "runtimeArgs": [
+        "manage.py",
+        "runserver"
+      ],
+      "cwd": "${workspaceFolder}",
+      "port": 8000
+    }
+  ]
+}

@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Casino Online - Royal Casino{% endblock %}</title>
+    <style>
+        :root {
+            --primary: #741AC0;
+            --primary-light: #A77BC3;
+            --accent: #F44CFC;
+            --accent-dark: #2B028C;
+            --bg-base: #080254;
+            --bg-overlay: rgba(8, 2, 84, 0.60);
+            --text-primary: #FFFFFF;
+            --text-secondary: #46407C;
+            --text-dark: #000114;
+            --success: #4CAF50;
+            --danger: #f44336;
+            --border-radius: 24px;
+            --spacing-xs: 8px;
+            --spacing-sm: 12px;
+            --spacing-md: 16px;
+            --spacing-lg: 24px;
+            --spacing-xl: 42px;
+            --spacing-xxl: 63px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html, body {
+            height: 100%;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+            background: linear-gradient(135deg, var(--bg-base) 0%, var(--accent-dark) 100%);
+            color: var(--text-primary);
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+
+        a {
+            color: var(--accent);
+            text-decoration: none;
+        }
+
+        a:hover {
+            text-decoration: underline;
+        }
+
+        button {
+            cursor: pointer;
+            border: none;
+            font-size: 1rem;
+            font-family: inherit;
+        }
+
+        input, textarea, select {
+            font-family: inherit;
+            border: 1px solid var(--primary);
+            padding: var(--spacing-sm) var(--spacing-md);
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text-primary);
+        }
+
+        input::placeholder {
+            color: var(--text-secondary);
+        }
+
+        /* Layout */
+        .container {
+            max-width: 480px;
+            margin: 0 auto;
+            padding: var(--spacing-xxl) var(--spacing-xl);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .navbar {
+            background: var(--bg-overlay);
+            border: 1px solid var(--primary);
+            border-radius: var(--border-radius);
+            padding: var(--spacing-lg) var(--spacing-xl);
+            margin-bottom: var(--spacing-lg);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .navbar-brand {
+            font-size: 1.5rem;
+            font-weight: bold;
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .navbar-balance {
+            font-size: 1.1rem;
+            color: var(--accent);
+            font-weight: bold;
+        }
+
+        .btn {
+            padding: var(--spacing-md) var(--spacing-lg);
+            border-radius: 12px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            border: none;
+            cursor: pointer;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary), var(--primary-light));
+            color: var(--text-primary);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(116, 26, 192, 0.3);
+        }
+
+        .btn-accent {
+            background: linear-gradient(135deg, var(--accent), var(--accent-dark));
+            color: var(--text-primary);
+        }
+
+        .btn-accent:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(244, 76, 252, 0.3);
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--text-primary);
+            border: 1px solid var(--primary);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        .card {
+            background: var(--bg-overlay);
+            border: 1px solid var(--primary);
+            border-radius: 12px;
+            padding: var(--spacing-lg);
+            margin-bottom: var(--spacing-lg);
+        }
+
+        .form-group {
+            margin-bottom: var(--spacing-lg);
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: var(--spacing-sm);
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .form-group input,
+        .form-group textarea,
+        .form-group select {
+            width: 100%;
+        }
+
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: var(--spacing-md);
+        }
+
+        .grid-3 {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: var(--spacing-md);
+        }
+
+        .text-center {
+            text-align: center;
+        }
+
+        .text-muted {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        .error {
+            color: var(--danger);
+            font-size: 0.9rem;
+            margin-top: var(--spacing-xs);
+        }
+
+        .success {
+            color: var(--success);
+            font-size: 0.9rem;
+            margin-top: var(--spacing-xs);
+        }
+
+        .alert {
+            padding: var(--spacing-md);
+            border-radius: 8px;
+            margin-bottom: var(--spacing-lg);
+        }
+
+        .alert-danger {
+            background: rgba(244, 67, 54, 0.1);
+            border: 1px solid var(--danger);
+            color: var(--danger);
+        }
+
+        .alert-success {
+            background: rgba(76, 175, 80, 0.1);
+            border: 1px solid var(--success);
+            color: var(--success);
+        }
+
+        .footer {
+            text-align: center;
+            margin-top: auto;
+            padding-top: var(--spacing-xl);
+            border-top: 1px solid var(--primary);
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid var(--primary);
+            border-top-color: var(--accent);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Responsive */
+        @media (max-width: 480px) {
+            .container {
+                padding: var(--spacing-lg);
+            }
+
+            .grid-2,
+            .grid-3 {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        {% block extra_css %}{% endblock %}
+    </style>
+</head>
+<body>
+    {% block navbar %}
+    <div class="container">
+        <div class="navbar">
+            <div class="navbar-brand">🎰 Casino</div>
+            {% if user.is_authenticated %}
+                <div class="navbar-balance">${{ user.balance }}</div>
+            {% endif %}
+        </div>
+    {% endblock %}
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="container">
+                <div class="alert alert-{{ message.tags }}">
+                    {{ message }}
+                </div>
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    {% block content %}{% endblock %}
+
+    {% block footer %}
+        <div class="container">
+            <div class="footer">
+                <p>&copy; 2024 Casino Online. Todos los derechos reservados.</p>
+                <p>Juego responsable. Si tienes problemas con el juego, busca ayuda.</p>
+            </div>
+        </div>
+    {% endblock %}
+
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

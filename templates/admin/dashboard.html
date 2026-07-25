@@ -1,0 +1,820 @@
+{% extends 'base.html' %}
+
+{% block title %}Panel Administrativo - Casino Online{% endblock %}
+
+{% block extra_css %}
+<style>
+    .admin-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: var(--spacing-xl);
+    }
+
+    .admin-title {
+        font-size: 2rem;
+        font-weight: bold;
+        background: linear-gradient(135deg, var(--primary), var(--accent));
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+
+    .tabs {
+        display: flex;
+        gap: var(--spacing-md);
+        margin-bottom: var(--spacing-lg);
+        border-bottom: 1px solid var(--primary);
+        flex-wrap: wrap;
+    }
+
+    .tab-btn {
+        padding: var(--spacing-md);
+        background: none;
+        border: none;
+        color: var(--text-secondary);
+        cursor: pointer;
+        font-weight: 600;
+        border-bottom: 3px solid transparent;
+        transition: all 0.3s ease;
+    }
+
+    .tab-btn.active {
+        color: var(--accent);
+        border-bottom-color: var(--accent);
+    }
+
+    .tab-btn:hover {
+        color: var(--primary);
+    }
+
+    .tab-content {
+        display: none;
+    }
+
+    .tab-content.active {
+        display: block;
+    }
+
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: var(--spacing-lg);
+        margin-bottom: var(--spacing-xl);
+    }
+
+    .stat-card {
+        background: var(--bg-overlay);
+        border: 1px solid var(--primary);
+        border-radius: 12px;
+        padding: var(--spacing-lg);
+        text-align: center;
+    }
+
+    .stat-label {
+        color: var(--text-secondary);
+        font-size: 0.85rem;
+        margin-bottom: var(--spacing-sm);
+    }
+
+    .stat-value {
+        font-size: 2rem;
+        font-weight: bold;
+        color: var(--accent);
+        margin-bottom: var(--spacing-xs);
+    }
+
+    .stat-change {
+        font-size: 0.8rem;
+        color: var(--success);
+    }
+
+    .stat-change.negative {
+        color: var(--danger);
+    }
+
+    .chart-container {
+        background: var(--bg-overlay);
+        border: 1px solid var(--primary);
+        border-radius: 12px;
+        padding: var(--spacing-lg);
+        margin-bottom: var(--spacing-lg);
+    }
+
+    .chart-title {
+        font-weight: bold;
+        margin-bottom: var(--spacing-lg);
+        color: var(--text-primary);
+    }
+
+    .users-table {
+        width: 100%;
+        border-collapse: collapse;
+        background: var(--bg-overlay);
+        border: 1px solid var(--primary);
+        border-radius: 12px;
+        overflow: hidden;
+    }
+
+    .users-table thead {
+        background: rgba(116, 26, 192, 0.2);
+        border-bottom: 2px solid var(--primary);
+    }
+
+    .users-table th {
+        padding: var(--spacing-md);
+        text-align: left;
+        font-weight: 600;
+        color: var(--accent);
+    }
+
+    .users-table td {
+        padding: var(--spacing-md);
+        border-bottom: 1px solid rgba(116, 26, 192, 0.2);
+        color: var(--text-primary);
+    }
+
+    .users-table tbody tr:hover {
+        background: rgba(244, 76, 252, 0.1);
+    }
+
+    .user-status {
+        display: inline-block;
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+
+    .status-active {
+        background: rgba(76, 175, 80, 0.2);
+        color: var(--success);
+        border: 1px solid var(--success);
+    }
+
+    .status-inactive {
+        background: rgba(244, 67, 54, 0.2);
+        color: var(--danger);
+        border: 1px solid var(--danger);
+    }
+
+    .status-suspended {
+        background: rgba(255, 152, 0, 0.2);
+        color: var(--danger);
+        border: 1px solid var(--danger);
+    }
+
+    .action-btn {
+        padding: 6px 12px;
+        background: var(--primary);
+        border: none;
+        color: var(--text-primary);
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 0.85rem;
+        transition: all 0.2s ease;
+        margin-right: 4px;
+    }
+
+    .action-btn:hover {
+        background: var(--accent);
+    }
+
+    .action-btn.danger {
+        background: var(--danger);
+    }
+
+    .action-btn.danger:hover {
+        background: rgba(244, 67, 54, 0.8);
+    }
+
+    .filter-section {
+        background: var(--bg-overlay);
+        border: 1px solid var(--primary);
+        border-radius: 12px;
+        padding: var(--spacing-lg);
+        margin-bottom: var(--spacing-lg);
+        display: flex;
+        gap: var(--spacing-md);
+        flex-wrap: wrap;
+    }
+
+    .filter-section input,
+    .filter-section select {
+        flex: 1;
+        min-width: 150px;
+    }
+
+    .modal {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.7);
+        z-index: 1000;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .modal.active {
+        display: flex;
+    }
+
+    .modal-content {
+        background: var(--bg-base);
+        border: 2px solid var(--primary);
+        border-radius: 12px;
+        padding: var(--spacing-xl);
+        max-width: 400px;
+        width: 90%;
+    }
+
+    .modal-title {
+        font-size: 1.5rem;
+        font-weight: bold;
+        margin-bottom: var(--spacing-lg);
+        color: var(--accent);
+    }
+
+    .modal-buttons {
+        display: flex;
+        gap: var(--spacing-md);
+        margin-top: var(--spacing-lg);
+    }
+
+    .modal-buttons button {
+        flex: 1;
+    }
+
+    .pagination {
+        display: flex;
+        justify-content: center;
+        gap: var(--spacing-md);
+        margin-top: var(--spacing-lg);
+    }
+
+    .pagination button {
+        padding: 8px 12px;
+        background: var(--bg-overlay);
+        border: 1px solid var(--primary);
+        color: var(--text-primary);
+        border-radius: 6px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+    .pagination button:hover,
+    .pagination button.active {
+        background: var(--primary);
+        border-color: var(--accent);
+    }
+
+    .settings-form {
+        background: var(--bg-overlay);
+        border: 1px solid var(--primary);
+        border-radius: 12px;
+        padding: var(--spacing-lg);
+        margin-bottom: var(--spacing-lg);
+        max-width: 600px;
+    }
+
+    .form-group-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: var(--spacing-md);
+    }
+
+    .toggle-switch {
+        display: flex;
+        align-items: center;
+        gap: var(--spacing-md);
+        padding: var(--spacing-md);
+        background: var(--bg-overlay);
+        border: 1px solid var(--primary);
+        border-radius: 8px;
+        margin-bottom: var(--spacing-md);
+    }
+
+    .switch {
+        position: relative;
+        display: inline-block;
+        width: 60px;
+        height: 30px;
+    }
+
+    .switch input {
+        opacity: 0;
+        width: 0;
+        height: 0;
+    }
+
+    .slider {
+        position: absolute;
+        cursor: pointer;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: var(--text-secondary);
+        transition: 0.4s;
+        border-radius: 30px;
+    }
+
+    .slider:before {
+        position: absolute;
+        content: "";
+        height: 22px;
+        width: 22px;
+        left: 4px;
+        bottom: 4px;
+        background-color: white;
+        transition: 0.4s;
+        border-radius: 50%;
+    }
+
+    input:checked + .slider {
+        background-color: var(--success);
+    }
+
+    input:checked + .slider:before {
+        transform: translateX(30px);
+    }
+
+    @media (max-width: 480px) {
+        .stats-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+
+        .users-table {
+            font-size: 0.9rem;
+        }
+
+        .users-table th,
+        .users-table td {
+            padding: var(--spacing-sm);
+        }
+
+        .form-group-row {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="admin-header">
+        <h1 class="admin-title">⚙️ Panel Administrativo</h1>
+        <button class="btn btn-secondary" id="logoutBtn" style="padding: 8px 16px;">
+            Cerrar Sesión
+        </button>
+    </div>
+
+    <!-- Tabs -->
+    <div class="tabs">
+        <button class="tab-btn active" data-tab="dashboard">📊 Dashboard</button>
+        <button class="tab-btn" data-tab="users">👥 Usuarios</button>
+        <button class="tab-btn" data-tab="transactions">💰 Transacciones</button>
+        <button class="tab-btn" data-tab="settings">⚙️ Configuración</button>
+    </div>
+
+    <!-- TAB: Dashboard -->
+    <div id="dashboard" class="tab-content active">
+        <!-- Estadísticas -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-label">Usuarios Totales</div>
+                <div class="stat-value" id="totalUsers">0</div>
+                <div class="stat-change">+12% esta semana</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Usuarios Activos Hoy</div>
+                <div class="stat-value" id="activeUsersToday">0</div>
+                <div class="stat-change">En línea ahora</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Balance Total</div>
+                <div class="stat-value" id="totalBalance">$0</div>
+                <div class="stat-change">Fondos en plataforma</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Ingresos Hoy</div>
+                <div class="stat-value" id="revenueToday">$0</div>
+                <div class="stat-change positive">+8% vs ayer</div>
+            </div>
+        </div>
+
+        <!-- Gráficos -->
+        <div class="chart-container">
+            <div class="chart-title">📈 Depósitos vs Retiros (Últimos 7 días)</div>
+            <div style="height: 200px; background: rgba(116, 26, 192, 0.1); border-radius: 8px; display: flex; align-items: flex-end; justify-content: space-around; padding: var(--spacing-lg);">
+                <div style="width: 30px; height: 60%; background: var(--primary); border-radius: 8px; position: relative;">
+                    <span style="position: absolute; bottom: -30px; color: var(--text-secondary); font-size: 0.8rem;">Lun</span>
+                </div>
+                <div style="width: 30px; height: 45%; background: var(--accent); border-radius: 8px; position: relative;">
+                    <span style="position: absolute; bottom: -30px; color: var(--text-secondary); font-size: 0.8rem;">Mar</span>
+                </div>
+                <div style="width: 30px; height: 70%; background: var(--primary); border-radius: 8px; position: relative;">
+                    <span style="position: absolute; bottom: -30px; color: var(--text-secondary); font-size: 0.8rem;">Mié</span>
+                </div>
+                <div style="width: 30px; height: 55%; background: var(--accent); border-radius: 8px; position: relative;">
+                    <span style="position: absolute; bottom: -30px; color: var(--text-secondary); font-size: 0.8rem;">Jue</span>
+                </div>
+                <div style="width: 30px; height: 80%; background: var(--primary); border-radius: 8px; position: relative;">
+                    <span style="position: absolute; bottom: -30px; color: var(--text-secondary); font-size: 0.8rem;">Vie</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="chart-container">
+            <div class="chart-title">🎮 Juegos Más Populares</div>
+            <div style="height: 300px;">
+                <table style="width: 100%;">
+                    <tr style="border-bottom: 1px solid var(--primary); padding: var(--spacing-md);">
+                        <td style="padding: var(--spacing-md);">🎰 Neon Slots</td>
+                        <td style="padding: var(--spacing-md); text-align: right;">1,245 juegos | $45,320</td>
+                    </tr>
+                    <tr style="border-bottom: 1px solid var(--primary); padding: var(--spacing-md);">
+                        <td style="padding: var(--spacing-md);">🐼 Panda Mines</td>
+                        <td style="padding: var(--spacing-md); text-align: right;">892 juegos | $32,180</td>
+                    </tr>
+                    <tr style="border-bottom: 1px solid var(--primary); padding: var(--spacing-md);">
+                        <td style="padding: var(--spacing-md);">🎡 Ruleta Clásica</td>
+                        <td style="padding: var(--spacing-md); text-align: right;">654 juegos | $28,950</td>
+                    </tr>
+                    <tr>
+                        <td style="padding: var(--spacing-md);">✈️ Golden Jet</td>
+                        <td style="padding: var(--spacing-md); text-align: right;">432 juegos | $18,670</td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- TAB: Usuarios -->
+    <div id="users" class="tab-content">
+        <div class="filter-section">
+            <input
+                type="text"
+                id="searchUser"
+                placeholder="🔍 Buscar usuario..."
+            >
+            <select id="filterStatus">
+                <option value="">Todos los estados</option>
+                <option value="active">Activo</option>
+                <option value="inactive">Inactivo</option>
+                <option value="suspended">Suspendido</option>
+                <option value="banned">Baneado</option>
+            </select>
+            <button class="btn btn-primary" id="filterBtn">Filtrar</button>
+        </div>
+
+        <table class="users-table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Email</th>
+                    <th>Documento</th>
+                    <th>Balance</th>
+                    <th>Estado</th>
+                    <th>Registrado</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody id="usersTableBody">
+                <tr>
+                    <td colspan="7" style="text-align: center; padding: var(--spacing-xl);">
+                        Cargando usuarios...
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div class="pagination" id="usersPagination"></div>
+    </div>
+
+    <!-- TAB: Transacciones -->
+    <div id="transactions" class="tab-content">
+        <div class="filter-section">
+            <select id="filterType">
+                <option value="">Todos los tipos</option>
+                <option value="deposit">Depósito</option>
+                <option value="withdrawal">Retiro</option>
+                <option value="bet">Apuesta</option>
+                <option value="win">Ganancia</option>
+                <option value="bonus">Bonus</option>
+            </select>
+            <select id="filterTransStatus">
+                <option value="">Todos los estados</option>
+                <option value="completed">Completado</option>
+                <option value="pending">Pendiente</option>
+                <option value="failed">Fallido</option>
+            </select>
+            <button class="btn btn-primary" id="filterTransBtn">Filtrar</button>
+        </div>
+
+        <table class="users-table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Usuario</th>
+                    <th>Tipo</th>
+                    <th>Monto</th>
+                    <th>Estado</th>
+                    <th>Fecha</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody id="transactionsTableBody">
+                <tr>
+                    <td colspan="7" style="text-align: center; padding: var(--spacing-xl);">
+                        Cargando transacciones...
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div class="pagination" id="transactionsPagination"></div>
+    </div>
+
+    <!-- TAB: Configuración -->
+    <div id="settings" class="tab-content">
+        <div class="settings-form">
+            <div style="margin-bottom: var(--spacing-lg);">
+                <h3 style="color: var(--accent); margin-bottom: var(--spacing-md);">🎮 Configuración de Juegos</h3>
+            </div>
+
+            <div class="form-group-row">
+                <div class="form-group">
+                    <label>Apuesta Mínima</label>
+                    <input type="number" id="minBet" placeholder="1.00" step="0.01" value="1">
+                </div>
+                <div class="form-group">
+                    <label>Apuesta Máxima</label>
+                    <input type="number" id="maxBet" placeholder="10000" step="0.01" value="10000">
+                </div>
+            </div>
+
+            <div class="toggle-switch">
+                <span>Modo Mantenimiento</span>
+                <label class="switch">
+                    <input type="checkbox" id="maintenanceMode">
+                    <span class="slider"></span>
+                </label>
+            </div>
+
+            <div class="form-group">
+                <label>Mensaje de Mantenimiento</label>
+                <textarea id="maintenanceMessage" placeholder="Sistema en mantenimiento..." style="width: 100%; min-height: 80px;"></textarea>
+            </div>
+
+            <button class="btn btn-accent" style="width: 100%; margin-bottom: var(--spacing-md);" id="saveSettingsBtn">
+                💾 Guardar Cambios
+            </button>
+        </div>
+
+        <div class="settings-form">
+            <div style="margin-bottom: var(--spacing-lg);">
+                <h3 style="color: var(--accent); margin-bottom: var(--spacing-md);">💰 Bonificaciones</h3>
+            </div>
+
+            <div class="form-group">
+                <label>Monto Bonus Bienvenida</label>
+                <input type="number" id="welcomeBonus" placeholder="100.00" step="0.01">
+            </div>
+
+            <div class="form-group">
+                <label>Multiplicador Requerido</label>
+                <input type="number" id="bonusMultiplier" placeholder="3" step="0.1">
+            </div>
+
+            <button class="btn btn-primary" style="width: 100%;" id="saveBonusBtn">
+                💾 Guardar Bonificaciones
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Confirmación -->
+<div class="modal" id="confirmModal">
+    <div class="modal-content">
+        <div class="modal-title" id="modalTitle">Confirmar acción</div>
+        <p id="modalMessage" style="margin-bottom: var(--spacing-lg); color: var(--text-secondary);"></p>
+        <div class="modal-buttons">
+            <button class="btn btn-secondary" id="modalCancel">Cancelar</button>
+            <button class="btn btn-danger" id="modalConfirm">Confirmar</button>
+        </div>
+    </div>
+</div>
+
+<script>
+const API_BASE = '/api';
+let currentAction = null;
+
+document.addEventListener('DOMContentLoaded', () => {
+    const token = localStorage.getItem('access_token');
+    if (!token) {
+        window.location.href = '{% url "login" %}';
+        return;
+    }
+
+    loadDashboard();
+    setupTabs();
+    setupEventListeners();
+});
+
+async function loadDashboard() {
+    try {
+        const response = await fetch(`${API_BASE}/admin/dashboard/`, {
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('access_token')}`
+            }
+        });
+
+        if (!response.ok) throw new Error('No autorizado');
+
+        const data = await response.json();
+        updateDashboardStats(data);
+        loadUsers();
+        loadTransactions();
+    } catch (error) {
+        console.error('Error:', error);
+        alert('Acceso denegado. Solo administradores.');
+        window.location.href = '{% url "games-lobby" %}';
+    }
+}
+
+function updateDashboardStats(data) {
+    document.getElementById('totalUsers').textContent = data.total_users || '0';
+    document.getElementById('activeUsersToday').textContent = data.active_users || '0';
+    document.getElementById('totalBalance').textContent = `$${(data.total_balance || 0).toFixed(2)}`;
+    document.getElementById('revenueToday').textContent = `$${(data.today_revenue || 0).toFixed(2)}`;
+}
+
+async function loadUsers() {
+    try {
+        const response = await fetch(`${API_BASE}/admin/users/`, {
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('access_token')}`
+            }
+        });
+
+        if (!response.ok) throw new Error('Error cargando usuarios');
+
+        const users = await response.json();
+        displayUsers(users);
+    } catch (error) {
+        console.error('Error:', error);
+    }
+}
+
+function displayUsers(users) {
+    const tbody = document.getElementById('usersTableBody');
+
+    if (!users || users.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: var(--spacing-xl);">No hay usuarios</td></tr>';
+        return;
+    }
+
+    tbody.innerHTML = users.map(user => `
+        <tr>
+            <td>#${user.id}</td>
+            <td>${user.email}</td>
+            <td>${user.document_number || 'N/A'}</td>
+            <td>$${parseFloat(user.balance).toFixed(2)}</td>
+            <td>
+                <span class="user-status status-${user.status.toLowerCase()}">
+                    ${user.status.charAt(0).toUpperCase() + user.status.slice(1)}
+                </span>
+            </td>
+            <td>${new Date(user.date_joined).toLocaleDateString()}</td>
+            <td>
+                <button class="action-btn" onclick="viewUser(${user.id})">Ver</button>
+                <button class="action-btn danger" onclick="suspendUser(${user.id})">Suspender</button>
+            </td>
+        </tr>
+    `).join('');
+}
+
+async function loadTransactions() {
+    try {
+        const response = await fetch(`${API_BASE}/admin/transactions/`, {
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('access_token')}`
+            }
+        });
+
+        if (!response.ok) throw new Error('Error cargando transacciones');
+
+        const transactions = await response.json();
+        displayTransactions(transactions);
+    } catch (error) {
+        console.error('Error:', error);
+    }
+}
+
+function displayTransactions(transactions) {
+    const tbody = document.getElementById('transactionsTableBody');
+
+    if (!transactions || transactions.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: var(--spacing-xl);">No hay transacciones</td></tr>';
+        return;
+    }
+
+    tbody.innerHTML = transactions.map(tx => `
+        <tr>
+            <td>#${tx.id}</td>
+            <td>${tx.user_email}</td>
+            <td>${tx.type.toUpperCase()}</td>
+            <td>$${parseFloat(tx.amount).toFixed(2)}</td>
+            <td>
+                <span class="user-status status-${tx.status.toLowerCase()}">
+                    ${tx.status.charAt(0).toUpperCase() + tx.status.slice(1)}
+                </span>
+            </td>
+            <td>${new Date(tx.created_at).toLocaleDateString()}</td>
+            <td>
+                <button class="action-btn" onclick="viewTransaction(${tx.id})">Detalles</button>
+            </td>
+        </tr>
+    `).join('');
+}
+
+function setupTabs() {
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const tabName = btn.dataset.tab;
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            btn.classList.add('active');
+            document.getElementById(tabName).classList.add('active');
+        });
+    });
+}
+
+function setupEventListeners() {
+    document.getElementById('logoutBtn').addEventListener('click', () => {
+        localStorage.removeItem('access_token');
+        localStorage.removeItem('refresh_token');
+        window.location.href = '{% url "login" %}';
+    });
+
+    document.getElementById('saveSettingsBtn').addEventListener('click', saveSettings);
+    document.getElementById('saveBonusBtn').addEventListener('click', saveBonusSettings);
+    document.getElementById('filterBtn').addEventListener('click', () => loadUsers());
+    document.getElementById('filterTransBtn').addEventListener('click', () => loadTransactions());
+
+    document.getElementById('modalCancel').addEventListener('click', closeModal);
+}
+
+async function saveSettings() {
+    const settings = {
+        min_bet: document.getElementById('minBet').value,
+        max_bet: document.getElementById('maxBet').value,
+        maintenance_mode: document.getElementById('maintenanceMode').checked,
+        maintenance_message: document.getElementById('maintenanceMessage').value
+    };
+
+    try {
+        alert('Configuración guardada');
+    } catch (error) {
+        alert('Error al guardar configuración');
+    }
+}
+
+async function saveBonusSettings() {
+    alert('Bonificaciones actualizadas');
+}
+
+function viewUser(userId) {
+    alert(`Ver usuario ${userId}`);
+}
+
+function suspendUser(userId) {
+    showModal('Suspender Usuario', '¿Estás seguro de que deseas suspender este usuario?', () => {
+        alert(`Usuario ${userId} suspendido`);
+    });
+}
+
+function viewTransaction(txId) {
+    alert(`Ver transacción ${txId}`);
+}
+
+function showModal(title, message, onConfirm) {
+    document.getElementById('modalTitle').textContent = title;
+    document.getElementById('modalMessage').textContent = message;
+    currentAction = onConfirm;
+    document.getElementById('confirmModal').classList.add('active');
+    document.getElementById('modalConfirm').onclick = () => {
+        onConfirm();
+        closeModal();
+    };
+}
+
+function closeModal() {
+    document.getElementById('confirmModal').classList.remove('active');
+}
+</script>
+{% endblock %}

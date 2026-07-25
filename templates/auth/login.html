@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Royal Casino Core - Login</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Segoe UI', Roboto, Tahoma, sans-serif;
+            background: radial-gradient(circle at 20% 0%, #2B028C 0%, transparent 45%),
+                        radial-gradient(circle at 100% 30%, #F44CFC 0%, transparent 35%),
+                        #0E000E;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+        }
+
+        .screen {
+            width: 100%;
+            max-width: 420px;
+            min-height: 100vh;
+            padding: 24px 18px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .card {
+            background: rgba(20, 5, 40, 0.55);
+            border: 1px solid #46407C;
+            border-radius: 24px;
+            padding: 24px 20px 20px;
+            position: relative;
+            z-index: 2;
+        }
+
+        .header { text-align: center; position: relative; margin-bottom: 8px; }
+
+        .mascots {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: relative;
+            margin-bottom: -30px;
+        }
+        .mascots img { width: 78px; height: auto; filter: drop-shadow(0 6px 10px rgba(0,0,0,0.5)); }
+
+        .title {
+            font-size: 1.7rem;
+            font-weight: 800;
+            font-style: italic;
+            background: linear-gradient(90deg, #FFD36E, #F44CFC);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            letter-spacing: 0.5px;
+        }
+
+        .subtitle-strong { font-size: 0.95rem; font-weight: 700; margin-top: 4px; }
+        .subtitle { font-size: 0.78rem; color: #B9B2B2; margin-top: 4px; padding: 0 10px; }
+
+        .crown-wrap {
+            display: flex;
+            justify-content: center;
+            margin: 22px 0 18px;
+        }
+        .crown-circle {
+            width: 74px;
+            height: 74px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: radial-gradient(circle, rgba(244,76,252,0.25), transparent 70%);
+            border: 1px solid #F44CFC;
+            box-shadow: 0 0 20px rgba(244,76,252,0.4);
+        }
+        .crown-circle img { width: 40px; height: 40px; }
+
+        .form-group { position: relative; margin-bottom: 14px; }
+        .form-group .icon {
+            position: absolute;
+            left: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            opacity: 0.8;
+            font-size: 1rem;
+        }
+        .form-group input {
+            width: 100%;
+            padding: 13px 40px;
+            background: rgba(255,255,255,0.06);
+            border: 1px solid #46407C;
+            border-radius: 12px;
+            color: #fff;
+            font-size: 0.9rem;
+        }
+        .form-group input::placeholder { color: #9c96c4; }
+        .form-group input:focus { outline: none; border-color: #F44CFC; }
+        .toggle-eye {
+            position: absolute;
+            right: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            cursor: pointer;
+            opacity: 0.8;
+            background: none;
+            border: none;
+            color: #fff;
+            font-size: 1rem;
+        }
+
+        .btn-entrar {
+            width: 100%;
+            padding: 13px;
+            border: 1px solid #B5FEFA;
+            border-radius: 12px;
+            background: conic-gradient(from 55deg, #01F9BE, #02F789, #00A8D4, #01F9BE);
+            color: #052015;
+            font-weight: 800;
+            font-size: 1rem;
+            letter-spacing: 1px;
+            cursor: pointer;
+            margin: 6px 0 14px;
+            box-shadow: 0 6px 16px rgba(1, 249, 190, 0.25);
+        }
+        .btn-entrar:hover { filter: brightness(1.08); }
+
+        .link-row { text-align: center; font-size: 0.82rem; color: #cfcbe8; margin-bottom: 8px; }
+        .link-row a { color: #F44CFC; text-decoration: none; font-weight: 600; }
+        .link-row a:hover { text-decoration: underline; }
+
+        .divider {
+            text-align: center;
+            font-size: 0.78rem;
+            color: #8b86ab;
+            margin: 14px 0;
+            position: relative;
+        }
+        .divider::before, .divider::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            width: 35%;
+            height: 1px;
+            background: #46407C;
+        }
+        .divider::before { left: 0; }
+        .divider::after { right: 0; }
+
+        .btn-guest {
+            width: 100%;
+            padding: 12px;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid #46407C;
+            border-radius: 12px;
+            color: #fff;
+            font-size: 0.88rem;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .btn-guest:hover { background: rgba(255,255,255,0.1); }
+
+        .fox-wrap {
+            display: flex;
+            justify-content: flex-start;
+            margin: -10px 0 -6px -8px;
+        }
+        .fox-wrap img { width: 130px; height: auto; filter: drop-shadow(0 8px 12px rgba(0,0,0,0.6)); }
+
+        .badges {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 4px;
+            padding-top: 12px;
+            border-top: 1px solid rgba(70,64,124,0.5);
+        }
+        .badge { text-align: center; font-size: 0.65rem; color: #cfcbe8; width: 30%; }
+        .badge .emoji { font-size: 1.3rem; display: block; margin-bottom: 4px; }
+
+        .footer-note {
+            text-align: center;
+            font-size: 0.72rem;
+            color: #8b86ab;
+            margin-top: 16px;
+        }
+
+        .error-message {
+            background: rgba(244, 76, 252, 0.12);
+            border: 1px solid #F44CFC;
+            color: #ff9ad4;
+            padding: 10px 14px;
+            border-radius: 10px;
+            margin-bottom: 14px;
+            font-size: 0.82rem;
+            text-align: center;
+            display: none;
+        }
+        .error-message.show { display: block; }
+
+        @media (max-width: 400px) {
+            .title { font-size: 1.4rem; }
+            .mascots img { width: 62px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="screen">
+        <div class="card">
+            <div class="mascots">
+                <img src="/static/images/characters/personaje_mapache.png" alt="Mapache">
+                <img src="/static/images/characters/personaje_chica.png" alt="Chica">
+            </div>
+            <div class="header">
+                <div class="title">ROYAL CASINO CORE</div>
+                <div class="subtitle-strong">Ingresa a tu cuenta</div>
+                <div class="subtitle">Accedé a tu lobby premium y seguí la emoción del juego.</div>
+            </div>
+
+            <div class="crown-wrap">
+                <div class="crown-circle">
+                    <img src="/static/images/characters/logo_corona.png" alt="Corona">
+                </div>
+            </div>
+
+            <div id="errorMsg" class="error-message"></div>
+
+            <form id="loginForm" onsubmit="handleLogin(event)">
+                {% csrf_token %}
+                <div class="form-group">
+                    <span class="icon">👤</span>
+                    <input type="text" id="email" name="email" placeholder="Nombre de usuario" required>
+                </div>
+                <div class="form-group">
+                    <span class="icon">🔒</span>
+                    <input type="password" id="password" name="password" placeholder="Contraseña" required>
+                    <button type="button" class="toggle-eye" onclick="togglePassword()">👁</button>
+                </div>
+
+                <button type="submit" class="btn-entrar">ENTRAR</button>
+            </form>
+
+            <div class="link-row">¿No tienes cuenta? <a href="/register/">Regístrate aquí</a></div>
+            <div class="link-row">¿Olvidaste tu <a href="/forgot-password/">contraseña</a>?</div>
+
+            <div class="divider">o continúa como</div>
+
+            <button class="btn-guest" onclick="continueAsGuest()">👤 Continuar como invitado</button>
+
+            <div class="fox-wrap">
+                <img src="/static/images/characters/personaje_zorro.png" alt="Zorro">
+            </div>
+
+            <div class="badges">
+                <div class="badge"><span class="emoji">🛡️</span>Seguro<br>y confiable</div>
+                <div class="badge"><span class="emoji">👑</span>Juegos<br>Premium</div>
+                <div class="badge"><span class="emoji">🎁</span>Bonos<br>Exclusivos</div>
+            </div>
+
+            <div class="footer-note">🔒 Tu diversión, nuestra prioridad.<br>Juego responsable.</div>
+        </div>
+    </div>
+
+    <script>
+        function togglePassword() {
+            const input = document.getElementById('password');
+            input.type = input.type === 'password' ? 'text' : 'password';
+        }
+
+        function continueAsGuest() {
+            window.location.href = '/lobby/';
+        }
+
+        async function handleLogin(event) {
+            event.preventDefault();
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const errorMsg = document.getElementById('errorMsg');
+
+            try {
+                const token = document.querySelector('[name="csrfmiddlewaretoken"]')?.value || '';
+                const response = await fetch('/api/users/auth/login/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': token
+                    },
+                    body: JSON.stringify({ email, password })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    window.location.href = '/lobby/';
+                } else {
+                    errorMsg.textContent = data.error || 'Credenciales incorrectas';
+                    errorMsg.classList.add('show');
+                }
+            } catch (error) {
+                errorMsg.textContent = 'Error al procesar login';
+                errorMsg.classList.add('show');
+            }
+        }
+    </script>
+</body>
+</html>

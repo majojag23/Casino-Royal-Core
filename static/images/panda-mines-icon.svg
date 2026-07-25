@@ -1,0 +1,22 @@
+<svg viewBox="0 0 128 128" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="pandaGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#741AC0;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#F44CFC;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  <!-- Background -->
+  <circle cx="64" cy="64" r="60" fill="url(#pandaGrad)" opacity="0.2" stroke="url(#pandaGrad)" stroke-width="2"/>
+  <!-- Panda head -->
+  <circle cx="64" cy="50" r="28" fill="#FFF" stroke="#080254" stroke-width="2"/>
+  <!-- Eyes -->
+  <circle cx="52" cy="42" r="8" fill="#080254"/>
+  <circle cx="76" cy="42" r="8" fill="#080254"/>
+  <!-- Nose -->
+  <circle cx="64" cy="54" r="4" fill="#080254"/>
+  <!-- Mouth -->
+  <path d="M 58 60 Q 64 65 70 60" stroke="#080254" stroke-width="2" fill="none"/>
+  <!-- Mine icon -->
+  <circle cx="64" cy="90" r="12" fill="#F44CFC" stroke="#741AC0" stroke-width="2"/>
+  <text x="64" y="96" text-anchor="middle" font-size="16" fill="#080254" font-weight="bold">⚠</text>
+</svg>

@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prueba de WebSockets</title>
+    <style>
+        :root {
+            --primary: #741AC0;
+            --accent: #F44CFC;
+            --dark: #080254;
+            --light: #F5F5F5;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, var(--dark) 0%, #1a0d4d 100%);
+            color: #fff;
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            color: var(--accent);
+            text-align: center;
+        }
+
+        .ws-section {
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px solid var(--primary);
+            border-radius: 12px;
+            padding: 20px;
+            margin: 20px 0;
+            backdrop-filter: blur(10px);
+        }
+
+        .ws-section h2 {
+            color: var(--accent);
+            margin-top: 0;
+        }
+
+        .input-group {
+            display: flex;
+            gap: 10px;
+            margin: 10px 0;
+            flex-wrap: wrap;
+        }
+
+        input {
+            padding: 10px;
+            border: 1px solid var(--primary);
+            border-radius: 6px;
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+            font-size: 14px;
+        }
+
+        input::placeholder {
+            color: rgba(255, 255, 255, 0.5);
+        }
+
+        button {
+            padding: 10px 20px;
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            color: #fff;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: transform 0.2s;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .status {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+
+        .status.connected {
+            background: #4CAF50;
+        }
+
+        .status.disconnected {
+            background: #f44336;
+        }
+
+        .log {
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--primary);
+            border-radius: 6px;
+            padding: 15px;
+            height: 300px;
+            overflow-y: auto;
+            margin: 10px 0;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+        }
+
+        .log-entry {
+            margin: 5px 0;
+            padding: 5px;
+            border-left: 3px solid var(--primary);
+            padding-left: 10px;
+        }
+
+        .log-entry.info {
+            border-left-color: #2196F3;
+        }
+
+        .log-entry.success {
+            border-left-color: #4CAF50;
+        }
+
+        .log-entry.error {
+            border-left-color: #f44336;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .stat-card {
+            background: rgba(244, 76, 252, 0.1);
+            border: 1px solid var(--accent);
+            border-radius: 8px;
+            padding: 15px;
+            text-align: center;
+        }
+
+        .stat-card h3 {
+            margin: 0;
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        .stat-card .value {
+            font-size: 24px;
+            color: var(--accent);
+            font-weight: bold;
+            margin: 10px 0 0 0;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 Prueba de WebSockets - Casino Online</h1>
+
+        <div class="grid">
+            <!-- Balance Consumer -->
+            <div class="ws-section">
+                <h2>
+                    <span class="status disconnected" id="balance-status"></span>
+                    Balance del Usuario
+                </h2>
+                <p>Conecta a: <code>ws://localhost:8000/ws/balance/&lt;user_id&gt;/</code></p>
+
+                <div class="input-group">
+                    <input type="number" id="balance-user-id" placeholder="User ID" value="1">
+                    <button onclick="connectBalance()">Conectar</button>
+                    <button onclick="disconnectBalance()">Desconectar</button>
+                </div>
+
+                <div class="log" id="balance-log"></div>
+
+                <div class="stats">
+                    <div class="stat-card">
+                        <h3>Balance</h3>
+                        <div class="value" id="current-balance">0.00</div>
+                    </div>
+                    <div class="stat-card">
+                        <h3>Eventos</h3>
+                        <div class="value" id="balance-events">0</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Leaderboard Consumer -->
+            <div class="ws-section">
+                <h2>
+                    <span class="status disconnected" id="leaderboard-status"></span>
+                    Tablero de Líderes
+                </h2>
+                <p>Conecta a: <code>ws://localhost:8000/ws/leaderboard/</code></p>
+
+                <div class="input-group">
+                    <button onclick="connectLeaderboard()">Conectar</button>
+                    <button onclick="disconnectLeaderboard()">Desconectar</button>
+                </div>
+
+                <div class="log" id="leaderboard-log"></div>
+
+                <div class="stats">
+                    <div class="stat-card">
+                        <h3>Top Jugadores</h3>
+                        <div class="value" id="leaderboard-count">0</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Notifications Consumer -->
+            <div class="ws-section">
+                <h2>
+                    <span class="status disconnected" id="notification-status"></span>
+                    Notificaciones
+                </h2>
+                <p>Conecta a: <code>ws://localhost:8000/ws/notifications/&lt;user_id&gt;/</code></p>
+
+                <div class="input-group">
+                    <input type="number" id="notification-user-id" placeholder="User ID" value="1">
+                    <button onclick="connectNotifications()">Conectar</button>
+                    <button onclick="disconnectNotifications()">Desconectar</button>
+                </div>
+
+                <div class="log" id="notification-log"></div>
+
+                <div class="stats">
+                    <div class="stat-card">
+                        <h3>Total</h3>
+                        <div class="value" id="notification-count">0</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Game Stream Consumer -->
+            <div class="ws-section">
+                <h2>
+                    <span class="status disconnected" id="gamestream-status"></span>
+                    Stream de Juegos
+                </h2>
+                <p>Conecta a: <code>ws://localhost:8000/ws/game_stream/&lt;game_type&gt;/</code></p>
+
+                <div class="input-group">
+                    <select id="game-type" style="padding: 10px; border-radius: 6px; background: rgba(255,255,255,0.1); color: #fff; border: 1px solid var(--primary);">
+                        <option value="slots">Slots</option>
+                        <option value="panda_mines">Panda Mines</option>
+                        <option value="roulette">Ruleta</option>
+                        <option value="golden_jet">Golden Jet</option>
+                        <option value="cyber_rolett">Cyber Rolett</option>
+                        <option value="personajes">Personajes</option>
+                    </select>
+                    <button onclick="connectGameStream()">Conectar</button>
+                    <button onclick="disconnectGameStream()">Desconectar</button>
+                </div>
+
+                <div class="log" id="gamestream-log"></div>
+
+                <div class="stats">
+                    <div class="stat-card">
+                        <h3>Juegos</h3>
+                        <div class="value" id="gamestream-count">0</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // WebSocket connections
+        let connections = {
+            balance: null,
+            leaderboard: null,
+            notifications: null,
+            gamestream: null
+        };
+
+        let stats = {
+            balance: 0,
+            leaderboard: 0,
+            notifications: 0,
+            gamestream: 0
+        };
+
+        function log(type, message, section) {
+            const logElement = document.getElementById(`${section}-log`);
+            const entry = document.createElement('div');
+            entry.className = `log-entry ${type}`;
+            entry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            logElement.appendChild(entry);
+            logElement.scrollTop = logElement.scrollHeight;
+        }
+
+        function updateStatus(section, connected) {
+            const statusElement = document.getElementById(`${section}-status`);
+            statusElement.className = `status ${connected ? 'connected' : 'disconnected'}`;
+        }
+
+        // Balance WebSocket
+        function connectBalance() {
+            const userId = document.getElementById('balance-user-id').value;
+            if (!userId) {
+                log('error', 'ID de usuario vacío', 'balance');
+                return;
+            }
+
+            connections.balance = new WebSocket(`ws://localhost:8000/ws/balance/${userId}/`);
+
+            connections.balance.onopen = () => {
+                log('success', 'Conectado', 'balance');
+                updateStatus('balance', true);
+            };
+
+            connections.balance.onmessage = (event) => {
+                stats.balance++;
+                const data = JSON.parse(event.data);
+                log('info', JSON.stringify(data), 'balance');
+
+                if (data.type === 'balance_update') {
+                    document.getElementById('current-balance').textContent = data.balance;
+                }
+
+                document.getElementById('balance-events').textContent = stats.balance;
+            };
+
+            connections.balance.onerror = (error) => {
+                log('error', `Error: ${error}`, 'balance');
+                updateStatus('balance', false);
+            };
+
+            connections.balance.onclose = () => {
+                log('error', 'Desconectado', 'balance');
+                updateStatus('balance', false);
+            };
+        }
+
+        function disconnectBalance() {
+            if (connections.balance) {
+                connections.balance.close();
+                connections.balance = null;
+            }
+        }
+
+        // Leaderboard WebSocket
+        function connectLeaderboard() {
+            connections.leaderboard = new WebSocket('ws://localhost:8000/ws/leaderboard/');
+
+            connections.leaderboard.onopen = () => {
+                log('success', 'Conectado', 'leaderboard');
+                updateStatus('leaderboard', true);
+            };
+
+            connections.leaderboard.onmessage = (event) => {
+                stats.leaderboard++;
+                const data = JSON.parse(event.data);
+                log('info', `Top ${data.leaderboard.length} jugadores`, 'leaderboard');
+
+                data.leaderboard.forEach((player, idx) => {
+                    log('info', `#${player.rank}: ${player.username} - $${player.balance}`, 'leaderboard');
+                });
+
+                document.getElementById('leaderboard-count').textContent = stats.leaderboard;
+            };
+
+            connections.leaderboard.onerror = (error) => {
+                log('error', `Error: ${error}`, 'leaderboard');
+            };
+
+            connections.leaderboard.onclose = () => {
+                log('error', 'Desconectado', 'leaderboard');
+                updateStatus('leaderboard', false);
+            };
+        }
+
+        function disconnectLeaderboard() {
+            if (connections.leaderboard) {
+                connections.leaderboard.close();
+                connections.leaderboard = null;
+            }
+        }
+
+        // Notifications WebSocket
+        function connectNotifications() {
+            const userId = document.getElementById('notification-user-id').value;
+            if (!userId) {
+                log('error', 'ID de usuario vacío', 'notification');
+                return;
+            }
+
+            connections.notifications = new WebSocket(`ws://localhost:8000/ws/notifications/${userId}/`);
+
+            connections.notifications.onopen = () => {
+                log('success', 'Conectado', 'notification');
+                updateStatus('notification', true);
+            };
+
+            connections.notifications.onmessage = (event) => {
+                stats.notifications++;
+                const data = JSON.parse(event.data);
+                log('info', `${data.title}: ${data.message}`, 'notification');
+                document.getElementById('notification-count').textContent = stats.notifications;
+            };
+
+            connections.notifications.onerror = (error) => {
+                log('error', `Error: ${error}`, 'notification');
+            };
+
+            connections.notifications.onclose = () => {
+                log('error', 'Desconectado', 'notification');
+                updateStatus('notification', false);
+            };
+        }
+
+        function disconnectNotifications() {
+            if (connections.notifications) {
+                connections.notifications.close();
+                connections.notifications = null;
+            }
+        }
+
+        // Game Stream WebSocket
+        function connectGameStream() {
+            const gameType = document.getElementById('game-type').value;
+
+            connections.gamestream = new WebSocket(`ws://localhost:8000/ws/game_stream/${gameType}/`);
+
+            connections.gamestream.onopen = () => {
+                log('success', `Conectado a ${gameType}`, 'gamestream');
+                updateStatus('gamestream', true);
+            };
+
+            connections.gamestream.onmessage = (event) => {
+                stats.gamestream++;
+                const data = JSON.parse(event.data);
+                log('info', `${data.player} jugó ${data.game}: $${data.bet} - ${data.result}`, 'gamestream');
+                document.getElementById('gamestream-count').textContent = stats.gamestream;
+            };
+
+            connections.gamestream.onerror = (error) => {
+                log('error', `Error: ${error}`, 'gamestream');
+            };
+
+            connections.gamestream.onclose = () => {
+                log('error', 'Desconectado', 'gamestream');
+                updateStatus('gamestream', false);
+            };
+        }
+
+        function disconnectGameStream() {
+            if (connections.gamestream) {
+                connections.gamestream.close();
+                connections.gamestream = null;
+            }
+        }
+    </script>
+</body>
+</html>

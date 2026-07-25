@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Perfil - Royal Casino Core</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Roboto, Tahoma, sans-serif;
+            background: radial-gradient(circle at 20% 0%, #2B028C 0%, transparent 45%),
+                        radial-gradient(circle at 100% 30%, #F44CFC 0%, transparent 35%),
+                        #0E000E;
+            min-height: 100vh;
+            color: #fff;
+            overflow-x: hidden;
+        }
+        .screen { max-width: 480px; width: 100%; margin: 0 auto; min-height: 100vh; padding-bottom: 100px; position: relative; overflow-x: hidden; }
+
+        .navbar {
+            display: flex; align-items: center; justify-content: space-between;
+            gap: clamp(4px, 2vw, 8px);
+            padding: clamp(10px, 3.2vw, 14px) clamp(10px, 4vw, 16px);
+            background: rgba(14, 0, 14, 0.7);
+            border-bottom: 1px solid #46407C;
+            position: sticky; top: 0; z-index: 10;
+        }
+        .navbar-left { display: flex; align-items: center; gap: clamp(4px, 1.6vw, 8px); min-width: 0; flex-shrink: 1; }
+        .navbar-brand { font-weight: 700; font-size: clamp(0.6rem, 3.1vw, 1.05rem); color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+        .navbar-brand .core { color: #099D87; }
+        .navbar-right { display: flex; align-items: center; gap: clamp(3px, 1.4vw, 6px); flex-shrink: 0; }
+        .balance-chip { background: rgba(255,255,255,0.08); border: 1px solid #46407C; border-radius: 20px; padding: clamp(3px, 1.2vw, 5px) clamp(6px, 2.2vw, 10px); font-size: clamp(0.56rem, 2.4vw, 0.75rem); font-weight: 700; white-space: nowrap; flex-shrink: 0; }
+        .btn-deposit, .btn-withdraw { border: none; border-radius: 20px; padding: clamp(4px, 1.6vw, 6px) clamp(6px, 2.6vw, 12px); font-size: clamp(0.54rem, 2.2vw, 0.7rem); font-weight: 700; cursor: pointer; white-space: nowrap; flex-shrink: 0; }
+        .btn-deposit { background: linear-gradient(135deg, #01F9BE, #00A8D4); color: #052015; }
+        .btn-withdraw { background: linear-gradient(135deg, #FF5A7A, #C21E4E); color: #fff; }
+
+        .header {
+            display: flex; align-items: center; justify-content: space-between;
+            gap: clamp(6px, 2.5vw, 12px);
+            padding: clamp(14px, 4vw, 18px) clamp(12px, 4vw, 16px) clamp(10px, 3vw, 14px);
+        }
+        .header-title-col { display: flex; align-items: center; gap: clamp(5px, 1.8vw, 8px); min-width: 0; flex-shrink: 1; }
+        .header-title {
+            font-size: clamp(1.3rem, 7vw, 2.1rem); font-weight: 800; font-style: italic;
+            background: linear-gradient(90deg, #FFD36E, #F44CFC);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+            white-space: nowrap;
+        }
+        .header-vip-badge { width: clamp(30px, 9vw, 46px); height: auto; flex-shrink: 0; }
+
+        .avatar-wrap { text-align: center; position: relative; flex-shrink: 0; }
+        .avatar-ring { position: relative; width: clamp(54px, 17vw, 74px); height: clamp(54px, 17vw, 74px); margin: 0 auto; }
+        .avatar-ring img.avatar { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; border: 2px solid #B98CFF; }
+        .avatar-edit-btn {
+            position: absolute; right: -2px; bottom: -2px;
+            width: 22px; height: 22px; border-radius: 50%;
+            background: linear-gradient(135deg, #8B2FE0, #F44CFC);
+            border: 2px solid #0E000E;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .avatar-edit-btn svg { width: 11px; height: 11px; }
+        .avatar-wrap .name { font-size: clamp(0.64rem, 2.6vw, 0.78rem); font-weight: 700; margin-top: 6px; white-space: nowrap; }
+        .avatar-wrap .id { font-size: clamp(0.52rem, 2vw, 0.6rem); color: #9c96c4; white-space: nowrap; }
+
+        .level-box {
+            margin: 0 16px 12px;
+            border: 1px solid #8B2FE0;
+            border-radius: 16px;
+            padding: 14px;
+            background: rgba(43,2,140,0.25);
+            display: flex; align-items: center; gap: clamp(8px, 3vw, 14px);
+        }
+        .level-box img.level-badge { width: clamp(48px, 15vw, 68px); height: auto; flex-shrink: 0; }
+        .level-info { flex: 1; min-width: 0; }
+        .level-info .top-row { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+        .level-info .level-name { color: #B98CFF; font-weight: 800; font-size: clamp(0.82rem, 3.4vw, 1rem); }
+        .level-info .xp-text { font-size: clamp(0.56rem, 2.2vw, 0.65rem); color: #cfcbe8; white-space: nowrap; }
+        .progress-bar { height: 8px; border-radius: 4px; background: rgba(255,255,255,0.08); margin-top: 8px; overflow: hidden; }
+        .progress-fill { height: 100%; background: linear-gradient(90deg, #8B2FE0, #F44CFC); }
+        .next-level-text { font-size: clamp(0.54rem, 2vw, 0.6rem); color: #9c96c4; margin-top: 8px; }
+        .next-level-text b { color: #FFD36E; }
+
+        .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; padding: 0 16px; margin-bottom: 8px; }
+        .stat-chip {
+            border: 1px solid #46407C; border-radius: 12px; padding: 10px 6px; text-align: center;
+            background: rgba(255,255,255,0.04);
+        }
+        .stat-chip img { width: clamp(18px, 6vw, 26px); height: clamp(18px, 6vw, 26px); object-fit: contain; margin-bottom: 4px; }
+        .stat-chip .label { font-size: clamp(0.46rem, 1.9vw, 0.55rem); color: #9c96c4; margin: 2px 0; letter-spacing: 0.3px; }
+        .stat-chip .value { font-weight: 800; font-size: clamp(0.68rem, 2.8vw, 0.85rem); }
+        .stat-chip .value.gold { color: #FFD36E; }
+        .stat-chip .value.cyan { color: #41DBFD; }
+        .stat-chip .value.green { color: #01F9BE; }
+        .stat-chip .value.purple { color: #B98CFF; }
+        .stat-chip .value.plain { color: #fff; }
+        .stat-chip .value.small { font-size: clamp(0.56rem, 2.2vw, 0.68rem); }
+
+        .section { margin: 12px 16px 16px; border: 1px solid #46407C; border-radius: 16px; padding: 14px; background: rgba(20,5,40,0.5); }
+        .section-title { font-size: 0.78rem; font-weight: 800; color: #FFD36E; margin-bottom: 12px; text-align: center; letter-spacing: 0.5px; }
+        .estad-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+        .estad-item { text-align: center; min-width: 0; }
+        .estad-item img { width: clamp(28px, 9vw, 40px); height: clamp(28px, 9vw, 40px); object-fit: contain; margin-bottom: 4px; }
+        .estad-item .label { font-size: clamp(0.46rem, 1.9vw, 0.55rem); color: #9c96c4; margin: 4px 0; }
+        .estad-item .value { font-weight: 800; font-size: clamp(0.72rem, 3vw, 0.9rem); }
+        .estad-item .value.pink { color: #F44CFC; }
+        .estad-item .value.gold { color: #FFD36E; }
+
+        .bottom-nav {
+            position: fixed; bottom: 10px; left: 50%; transform: translateX(-50%);
+            width: calc(100% - 24px); max-width: 448px;
+            display: flex; justify-content: space-around; align-items: center;
+            padding: clamp(6px, 2vw, 8px) clamp(4px, 1.5vw, 6px);
+            background: #0D072C;
+            border: 1px solid #72378B;
+            border-radius: 24px;
+            z-index: 50;
+        }
+        .nav-item {
+            display: flex; align-items: center; justify-content: center; flex: 1;
+            padding: 4px 2px; border: 1.5px solid transparent; border-radius: 14px;
+            transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+        }
+        .nav-item img { height: clamp(26px, 9vw, 40px); width: auto; max-width: 100%; filter: grayscale(1) brightness(1.6) opacity(0.55); transition: filter 0.2s; }
+        .nav-item.active {
+            background: rgba(244,76,252,0.14);
+            border-color: #F44CFC;
+            box-shadow: 0 0 14px rgba(244,76,252,0.5);
+        }
+        .nav-item.active img { filter: none; }
+
+        @media (max-width: 340px) {
+            .navbar-brand .core { display: none; }
+        }
+    </style>
+</head>
+<body>
+    <div class="screen">
+        <div class="navbar">
+            <div class="navbar-left">
+                <span>☰</span>
+                <span class="navbar-brand">ROYAL CASINO <span class="core">CORE</span></span>
+            </div>
+            <div class="navbar-right">
+                <span class="balance-chip" id="balanceDisplay">$0.00</span>
+                <button class="btn-deposit" onclick="window.location.href='/deposit/'">+ DEPOSITAR</button>
+                <button class="btn-withdraw" onclick="window.location.href='/withdraw/'">- RETIRAR</button>
+            </div>
+        </div>
+
+        <div class="header">
+            <div class="header-title-col">
+                <span class="header-title">Perfil</span>
+                <img class="header-vip-badge" src="/static/images/characters/perfil_vip_badge.png" alt="VIP">
+            </div>
+            <div class="avatar-wrap">
+                <div class="avatar-ring">
+                    <img class="avatar" src="/static/images/characters/perfil_avatar.png" alt="Avatar">
+                    <div class="avatar-edit-btn">
+                        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M4 8h2.5l1.2-2h8.6l1.2 2H20a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1Z" stroke="#fff" stroke-width="1.6"/>
+                            <circle cx="12" cy="14" r="3.2" stroke="#fff" stroke-width="1.6"/>
+                        </svg>
+                    </div>
+                </div>
+                <div class="name" id="playerName">Jugador VIP</div>
+                <div class="id" id="playerId">ID: 000000000</div>
+            </div>
+        </div>
+
+        <div class="level-box">
+            <img class="level-badge" src="/static/images/characters/vip_badge_diamante.png" alt="Diamante">
+            <div class="level-info">
+                <div class="top-row">
+                    <span class="level-name">DIAMANTE</span>
+                    <span class="xp-text">3,250 / 5,000 XP</span>
+                </div>
+                <div class="progress-bar"><div class="progress-fill" style="width:65%;"></div></div>
+                <div class="next-level-text">Te faltan 1,750 XP para alcanzar el siguiente nivel: <b>LEYENDA</b></div>
+            </div>
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-chip"><img src="/static/images/characters/perfil_icon_saldo.png" alt="Saldo"><div class="label">SALDO</div><div class="value gold" id="statBalance">$0.00</div></div>
+            <div class="stat-chip"><img src="/static/images/characters/perfil_icon_springs.png" alt="Springs"><div class="label">SPRINGS</div><div class="value plain" id="statSprings">0</div></div>
+            <div class="stat-chip">
+                <svg width="26" height="26" viewBox="0 0 24 24" fill="none" style="margin-bottom:4px" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M20 12a8 8 0 1 1-2.34-5.66" stroke="#41DBFD" stroke-width="2.2" stroke-linecap="round"/>
+                    <path d="M20 4v5h-5" stroke="#41DBFD" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                <div class="label">GIROS GRATIS</div><div class="value cyan" id="statFreeSpins">0</div>
+            </div>
+        </div>
+        <div class="stats-grid">
+            <div class="stat-chip"><img src="/static/images/characters/perfil_icon_bonos.png" alt="Bonos"><div class="label">BONOS</div><div class="value green" id="statBonos">0</div></div>
+            <div class="stat-chip"><img src="/static/images/characters/vip_badge_diamante.png" alt="Nivel VIP"><div class="label">NIVEL VIP</div><div class="value purple">DIAMANTE</div></div>
+            <div class="stat-chip"><div class="label" style="margin-top:30px;">MEMBRESÍA DESDE</div><div class="value gold small" id="statMemberSince">--/--/----</div></div>
+        </div>
+
+        <div class="section">
+            <div class="section-title">ESTADÍSTICAS</div>
+            <div class="estad-grid">
+                <div class="estad-item"><img src="/static/images/characters/perfil_icon_juegos.png" alt="Juegos jugados"><div class="label">JUEGOS JUGADOS</div><div class="value pink" id="statGames">0</div></div>
+                <div class="estad-item"><img src="/static/images/characters/perfil_icon_saldo.png" alt="Ganancias totales"><div class="label">GANANCIAS TOTALES</div><div class="value gold" id="statWinnings">$0</div></div>
+                <div class="estad-item"><img src="/static/images/characters/perfil_icon_mejorpremio.png" alt="Mejor premio"><div class="label">MEJOR PREMIO</div><div class="value pink" id="statBestPrize">$0</div></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="bottom-nav">
+        <a href="/lobby/" class="nav-item"><img src="/static/images/icons/nav_lobby.png" alt="Lobby"></a>
+        <a href="/promos/" class="nav-item"><img src="/static/images/icons/nav_promos.png" alt="Promos"></a>
+        <a href="/vip/" class="nav-item"><img src="/static/images/icons/nav_vip.png" alt="VIP"></a>
+        <a href="/profile/" class="nav-item active"><img src="/static/images/icons/nav_perfil.png" alt="Perfil"></a>
+    </div>
+
+    <script>
+        async function loadUserData() {
+            try {
+                const response = await fetch('/api/users/profile/');
+                if (response.ok) {
+                    const data = await response.json();
+                    document.getElementById('balanceDisplay').textContent = `$${parseFloat(data.balance).toFixed(2)}`;
+                    document.getElementById('statBalance').textContent = `$${parseFloat(data.balance).toFixed(2)}`;
+                    document.getElementById('playerName').textContent = data.username || 'Jugador VIP';
+                    document.getElementById('playerId').textContent = `ID: ${String(data.id).padStart(9, '0')}`;
+                }
+            } catch (e) {}
+        }
+
+        async function loadUserStats() {
+            try {
+                const response = await fetch('/api/users/stats/');
+                if (response.ok) {
+                    const data = await response.json();
+                    document.getElementById('statSprings').textContent = data.springs;
+                    document.getElementById('statFreeSpins').textContent = data.free_spins_remaining;
+                    document.getElementById('statBonos').textContent = data.bonus_count;
+                    document.getElementById('statMemberSince').textContent = data.member_since;
+                    document.getElementById('statGames').textContent = data.games_played;
+                    document.getElementById('statWinnings').textContent = `$${Math.round(data.total_payout)}`;
+                    document.getElementById('statBestPrize').textContent = `$${Math.round(data.best_prize)}`;
+                }
+            } catch (e) {}
+        }
+
+        loadUserData();
+        loadUserStats();
+    </script>
+</body>
+</html>

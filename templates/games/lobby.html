@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <title>Lobby - Royal Casino Core</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        html { -webkit-text-size-adjust: 100%; }
+        body {
+            font-family: 'Segoe UI', Roboto, Tahoma, sans-serif;
+            background: radial-gradient(circle at 20% 0%, #2B028C 0%, transparent 45%),
+                        radial-gradient(circle at 100% 30%, #F44CFC 0%, transparent 35%),
+                        #0E000E;
+            min-height: 100vh;
+            color: #fff;
+            overflow-x: hidden;
+        }
+
+        .screen { max-width: 480px; width: 100%; margin: 0 auto; min-height: 100vh; padding-bottom: 100px; position: relative; overflow-x: hidden; }
+
+        .navbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: clamp(4px, 2vw, 8px);
+            padding: clamp(10px, 3.2vw, 14px) clamp(10px, 4vw, 16px);
+            background: rgba(14, 0, 14, 0.7);
+            border-bottom: 1px solid #46407C;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+        .navbar-left { display: flex; align-items: center; gap: clamp(4px, 1.6vw, 8px); min-width: 0; flex-shrink: 1; }
+        .menu-icon {
+            width: clamp(22px, 6.5vw, 30px); height: clamp(22px, 6.5vw, 30px);
+            display: flex; align-items: center; justify-content: center;
+            font-size: clamp(0.9rem, 3.2vw, 1.1rem);
+            color: #fff;
+            flex-shrink: 0;
+        }
+        .navbar-brand {
+            font-weight: 700;
+            font-size: clamp(0.6rem, 3.1vw, 1.05rem);
+            color: #fff;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            min-width: 0;
+        }
+        .navbar-brand .core { color: #099D87; }
+        .navbar-right { display: flex; align-items: center; gap: clamp(3px, 1.4vw, 6px); flex-shrink: 0; }
+        .balance-chip {
+            background: rgba(255,255,255,0.08);
+            border: 1px solid #46407C;
+            border-radius: 20px;
+            padding: clamp(3px, 1.2vw, 5px) clamp(6px, 2.2vw, 10px);
+            font-size: clamp(0.56rem, 2.4vw, 0.75rem);
+            font-weight: 700;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+        .btn-deposit, .btn-withdraw {
+            border: none;
+            border-radius: 20px;
+            padding: clamp(4px, 1.6vw, 6px) clamp(6px, 2.6vw, 12px);
+            font-size: clamp(0.54rem, 2.2vw, 0.7rem);
+            font-weight: 700;
+            cursor: pointer;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+        .btn-deposit { background: linear-gradient(135deg, #01F9BE, #00A8D4); color: #052015; }
+        .btn-withdraw { background: linear-gradient(135deg, #FF5A7A, #C21E4E); color: #fff; }
+
+        .container { padding: clamp(12px, 4vw, 16px) clamp(12px, 4vw, 16px) 0; }
+
+        .hero {
+            border-radius: clamp(14px, 4vw, 20px);
+            overflow: hidden;
+            margin-bottom: clamp(12px, 4vw, 16px);
+        }
+        .hero img { width: 100%; display: block; }
+
+        .filter-tabs-wrap { position: relative; margin-bottom: 4px; }
+        .filter-tabs-wrap::after {
+            content: '';
+            position: absolute;
+            top: 0; right: 0; bottom: clamp(10px, 3.5vw, 14px);
+            width: 28px;
+            background: linear-gradient(to right, rgba(14,0,14,0), rgba(14,0,14,0.9));
+            pointer-events: none;
+        }
+        .filter-tabs {
+            display: flex;
+            align-items: center;
+            gap: clamp(8px, 3.2vw, 16px);
+            overflow-x: auto;
+            padding: 2px clamp(24px, 8vw, 32px) clamp(10px, 3.5vw, 14px) 2px;
+            scrollbar-width: none;
+        }
+        .filter-tabs::-webkit-scrollbar { display: none; }
+        .filter-tab {
+            border: none;
+            background: transparent;
+            color: #9c96c4;
+            font-size: clamp(0.66rem, 2.6vw, 0.78rem);
+            font-weight: 700;
+            padding: clamp(5px, 2vw, 7px) clamp(10px, 4vw, 16px);
+            border-radius: 20px;
+            white-space: nowrap;
+            cursor: pointer;
+            flex-shrink: 0;
+        }
+        .filter-tab.active {
+            background: linear-gradient(135deg, #F44CFC, #A21ECF);
+            color: #fff;
+        }
+
+        .games-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: clamp(8px, 3vw, 12px);
+        }
+        .game-card {
+            position: relative;
+            border-radius: clamp(14px, 4.5vw, 20px);
+            overflow: hidden;
+            cursor: pointer;
+            aspect-ratio: 209 / 166;
+            width: 100%;
+            transition: transform 0.15s;
+        }
+        .game-card:active { transform: scale(0.96); }
+        .game-card img { width: 100%; height: 100%; display: block; object-fit: contain; }
+        .game-card.hidden { display: none; }
+
+        .empty-state {
+            grid-column: 1 / -1;
+            text-align: center;
+            padding: 30px 10px;
+            color: #7a749e;
+            font-size: 0.85rem;
+        }
+
+        .bottom-nav {
+            position: fixed;
+            bottom: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: calc(100% - 24px);
+            max-width: 448px;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            padding: clamp(6px, 2vw, 8px) clamp(4px, 1.5vw, 6px);
+            background: #0D072C;
+            border: 1px solid #72378B;
+            border-radius: 24px;
+            z-index: 50;
+        }
+        .nav-item {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex: 1;
+            padding: 4px 2px;
+            border: 1.5px solid transparent;
+            border-radius: 14px;
+            transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+        }
+        .nav-item img { height: clamp(26px, 9vw, 40px); width: auto; max-width: 100%; filter: grayscale(1) brightness(1.6) opacity(0.55); transition: filter 0.2s; }
+        .nav-item.active {
+            background: rgba(244,76,252,0.14);
+            border-color: #F44CFC;
+            box-shadow: 0 0 14px rgba(244,76,252,0.5);
+        }
+        .nav-item.active img { filter: none; }
+
+        @media (max-width: 340px) {
+            .navbar-brand .core { display: none; }
+        }
+    </style>
+</head>
+<body>
+    <div class="screen">
+        <div class="navbar">
+            <div class="navbar-left">
+                <span class="menu-icon">☰</span>
+                <span class="navbar-brand">ROYAL CASINO <span class="core">CORE</span></span>
+            </div>
+            <div class="navbar-right">
+                <span class="balance-chip" id="balanceDisplay">$0.00</span>
+                <button class="btn-deposit" onclick="window.location.href='/deposit/'">+ DEPOSITAR</button>
+                <button class="btn-withdraw" onclick="window.location.href='/withdraw/'">- RETIRAR</button>
+            </div>
+        </div>
+
+        <div class="container">
+            <div class="hero">
+                <img src="/static/images/characters/lobby_v2_banner.png?v=1" alt="Elige tu próxima jugada">
+            </div>
+
+            <div class="filter-tabs-wrap">
+                <div class="filter-tabs" id="filterTabs">
+                    <button class="filter-tab active" data-cat="todos">Todos</button>
+                    <button class="filter-tab" data-cat="slots">SLOTS</button>
+                    <button class="filter-tab" data-cat="casino">CASINO</button>
+                    <button class="filter-tab" data-cat="jackpots">JACKPOTS</button>
+                    <button class="filter-tab" data-cat="crash">CRASH</button>
+                    <button class="filter-tab" data-cat="cartas">CARTAS</button>
+                </div>
+            </div>
+
+            <div class="games-grid" id="gamesGrid">
+                <div class="game-card" data-cat="slots" onclick="playGame('frozen_age')">
+                    <img src="/static/images/characters/card_frozen.png?v=1" alt="Frozen Age">
+                </div>
+                <div class="game-card" data-cat="slots" onclick="playGame('totem_falls')">
+                    <img src="/static/images/characters/card_totem_falls.png?v=2" alt="Totem Falls Bonanza">
+                </div>
+                <div class="game-card" data-cat="slots" onclick="playGame('farm_fest')">
+                    <img src="/static/images/characters/card_farm_fest.png?v=2" alt="Farm Fest Slots">
+                </div>
+                <div class="game-card" data-cat="slots" onclick="playGame('neon_slots')">
+                    <img src="/static/images/characters/card_neon.png?v=2" alt="Neon Slots">
+                </div>
+                <div class="game-card" data-cat="crash" onclick="playGame('golden_jet')">
+                    <img src="/static/images/characters/card_golden.png?v=2" alt="Golden Jet">
+                </div>
+                <div class="game-card" data-cat="slots" onclick="playGame('dragon_fruit')">
+                    <img src="/static/images/characters/card_dragon.png?v=2" alt="Dragon Fruit Bonanza">
+                </div>
+                <div class="game-card" data-cat="casino" onclick="playGame('cyber_rolett')">
+                    <img src="/static/images/characters/card_cyber.png?v=2" alt="Cyber Rolett">
+                </div>
+                <div class="game-card" data-cat="jackpots" onclick="playGame('bird_blast')">
+                    <img src="/static/images/characters/card_bird_new.png?v=2" alt="Bird Blast Bonanza">
+                </div>
+                <div class="game-card" data-cat="casino" onclick="playGame('duck_rush')">
+                    <img src="/static/images/characters/card_duck_new.png?v=2" alt="Duck Rush">
+                </div>
+                <div class="game-card" data-cat="casino" onclick="playGame('panda_mines')">
+                    <img src="/static/images/characters/card_panda_new.png?v=2" alt="Panda Mines">
+                </div>
+            </div>
+            <div class="empty-state" id="emptyState" style="display:none;">No hay juegos en esta categoría todavía.</div>
+        </div>
+    </div>
+
+    <div class="bottom-nav">
+        <a href="/lobby/" class="nav-item active"><img src="/static/images/icons/nav_lobby.png" alt="Lobby"></a>
+        <a href="/promos/" class="nav-item"><img src="/static/images/icons/nav_promos.png" alt="Promos"></a>
+        <a href="/vip/" class="nav-item"><img src="/static/images/icons/nav_vip.png" alt="VIP"></a>
+        <a href="/profile/" class="nav-item"><img src="/static/images/icons/nav_perfil.png" alt="Perfil"></a>
+    </div>
+
+    <script>
+        function playGame(gameId) {
+            window.location.href = `/games/${gameId}/`;
+        }
+
+        async function loadUserData() {
+            try {
+                const response = await fetch('/api/users/profile/', { headers: { 'Accept': 'application/json' } });
+                if (response.ok) {
+                    const data = await response.json();
+                    document.getElementById('balanceDisplay').textContent = `$${parseFloat(data.balance).toFixed(2)}`;
+                }
+            } catch (error) {
+                console.log('Error loading user data:', error);
+            }
+        }
+        loadUserData();
+
+        const tabs = document.querySelectorAll('.filter-tab');
+        const cards = document.querySelectorAll('.game-card');
+        const emptyState = document.getElementById('emptyState');
+
+        tabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                tabs.forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+                const cat = tab.dataset.cat;
+                let visibleCount = 0;
+                cards.forEach(card => {
+                    const show = cat === 'todos' || card.dataset.cat === cat;
+                    card.classList.toggle('hidden', !show);
+                    if (show) visibleCount++;
+                });
+                emptyState.style.display = visibleCount === 0 ? 'block' : 'none';
+            });
+        });
+    </script>
+</body>
+</html>

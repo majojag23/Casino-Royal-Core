@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <title>Golden Jet - Royal Casino Core</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Roboto, Tahoma, sans-serif;
+            background: #1a1004;
+            min-height: 100vh;
+            color: #fff;
+        }
+        .screen {
+            max-width: 480px;
+            margin: 0 auto;
+            min-height: 100vh;
+            padding-bottom: 100px;
+            position: relative;
+            background: linear-gradient(180deg, rgba(20,10,0,0.05) 0%, rgba(20,10,0,0.25) 55%, rgba(20,10,0,0.6) 100%),
+                        url('/static/images/characters/golden_jet_background.png');
+            background-size: cover;
+            background-position: center top;
+            background-repeat: no-repeat;
+        }
+        .back-link { display: inline-flex; align-items: center; gap: 6px; padding: 14px 16px; color: #fff3d6; text-decoration: none; font-size: 0.85rem; text-shadow: 0 1px 3px rgba(0,0,0,0.7); }
+        .title-row { display: flex; justify-content: center; margin-bottom: 8px; }
+        .title-row img { height: 86px; width: auto; filter: drop-shadow(0 6px 12px rgba(0,0,0,0.6)); }
+
+        .top-row { display: flex; justify-content: space-between; align-items: center; padding: 0 16px; margin-bottom: 10px; gap: 8px; }
+        .billetera-chip { position: relative; flex: 1.15; max-width: 190px; }
+        .billetera-chip img { width: 100%; height: auto; display: block; filter: drop-shadow(0 3px 6px rgba(0,0,0,0.5)); }
+        .billetera-chip .amount {
+            position: absolute; top: 52%; left: 39%; transform: translateY(-50%);
+            font-size: 0.72rem; font-weight: 800; color: #4a2a06;
+        }
+
+        .apuesta-chip {
+            flex: 1; max-width: 190px;
+            display: flex; align-items: center; justify-content: space-between; gap: 6px;
+            background: linear-gradient(180deg, #F5DEB3, #D9B776);
+            border: 2px solid #A56218;
+            border-radius: 20px;
+            padding: 5px 6px;
+        }
+        .apuesta-chip .label { font-size: 0.6rem; font-weight: 800; color: #5a3a0a; }
+        .apuesta-chip .amt { font-size: 0.72rem; font-weight: 800; color: #401E00; }
+        .apuesta-chip button {
+            width: 22px; height: 22px; border-radius: 50%; border: none; cursor: pointer;
+            color: #fff; font-size: 1rem; font-weight: 800; display: flex; align-items: center; justify-content: center;
+        }
+        .apuesta-chip button:disabled { opacity: 0.4; cursor: not-allowed; }
+        .apuesta-chip .plus { background: linear-gradient(180deg, #C77DFF, #8A2BE2); }
+        .apuesta-chip .minus { background: linear-gradient(180deg, #4CD964, #1F9C4A); }
+
+        .status-row { display: flex; justify-content: space-between; padding: 0 16px; margin-bottom: 10px; gap: 8px; }
+        .status-pill {
+            flex: 1; text-align: center; font-size: 0.66rem; font-weight: 800;
+            padding: 6px 8px; border-radius: 20px;
+            background: rgba(20,12,4,0.65); border: 1px solid #C47B20;
+        }
+        .status-pill.flying { color: #FFD36E; }
+        .status-pill.mult { color: #7CFFA0; }
+
+        .graph-area {
+            margin: 0 16px 14px;
+            height: 270px;
+            border: 2px solid rgba(196,123,32,0.6);
+            border-radius: 16px;
+            background: rgba(20,12,4,0.12);
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .graph-svg { width: 100%; height: 100%; position: absolute; top: 0; left: 0; }
+        .mult-big {
+            font-size: 2.4rem;
+            font-weight: 800;
+            color: #FFD36E;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.8), 0 0 16px rgba(255,211,110,0.5);
+            z-index: 2;
+        }
+        .mult-big.crashed { color: #FF6B4A; }
+        .jet-sprite {
+            position: absolute;
+            width: 92px;
+            height: auto;
+            z-index: 3;
+            pointer-events: none;
+            display: none;
+            transform-origin: center;
+            filter: drop-shadow(0 4px 8px rgba(0,0,0,0.5));
+        }
+        .jet-sprite.show { display: block; }
+
+        .explosion {
+            position: absolute;
+            width: 24px;
+            height: 24px;
+            z-index: 4;
+            pointer-events: none;
+            display: none;
+            transform: translate(-50%, -50%);
+        }
+        .explosion.show { display: block; }
+        .explosion .ring {
+            position: absolute;
+            top: 50%; left: 50%;
+            border-radius: 50%;
+            border: 3px solid #FF6B4A;
+            transform: translate(-50%, -50%);
+            animation: explosion-ring 0.6s ease-out forwards;
+        }
+        .explosion .core {
+            position: absolute;
+            top: 50%; left: 50%;
+            width: 100%; height: 100%;
+            border-radius: 50%;
+            background: radial-gradient(circle, #fff 0%, #FFD36E 30%, #FF6B4A 60%, transparent 75%);
+            transform: translate(-50%, -50%);
+            animation: explosion-core 0.5s ease-out forwards;
+        }
+        @keyframes explosion-core {
+            0% { transform: translate(-50%, -50%) scale(0.2); opacity: 1; }
+            60% { transform: translate(-50%, -50%) scale(3.2); opacity: 1; }
+            100% { transform: translate(-50%, -50%) scale(3.6); opacity: 0; }
+        }
+        @keyframes explosion-ring {
+            0% { width: 10px; height: 10px; opacity: 1; }
+            100% { width: 140px; height: 140px; opacity: 0; }
+        }
+        .graph-area.shake { animation: graph-shake 0.4s ease-in-out; }
+        @keyframes graph-shake {
+            0%, 100% { transform: translate(0, 0); }
+            20% { transform: translate(-6px, 3px); }
+            40% { transform: translate(5px, -4px); }
+            60% { transform: translate(-4px, -2px); }
+            80% { transform: translate(6px, 2px); }
+        }
+        .graph-area.flash-red { background: rgba(255,90,74,0.25); transition: background 0.15s ease-out; }
+
+        .actions-row { display: flex; gap: 8px; padding: 0 16px; margin-bottom: 12px; }
+        .action-btn {
+            flex: 1; height: 54px; border: none; cursor: pointer;
+            appearance: none; -webkit-appearance: none;
+            background-color: transparent; background-size: contain; background-position: center; background-repeat: no-repeat;
+            transition: transform 0.15s, opacity 0.2s;
+        }
+        .action-btn.cobrar { background-image: url('/static/images/characters/golden_jet_btn_cobrar.png'); }
+        .action-btn.despegar { background-image: url('/static/images/characters/golden_jet_btn_despegar.png'); }
+        .action-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .action-btn:active { transform: scale(0.96); }
+        .auto-btn {
+            width: 74px; height: 54px; border: none; cursor: pointer;
+            appearance: none; -webkit-appearance: none;
+            background-color: transparent;
+            background-image: url('/static/images/characters/golden_jet_btn_auto.png');
+            background-size: contain; background-position: center; background-repeat: no-repeat;
+            transition: transform 0.15s;
+        }
+        .auto-btn.active { filter: drop-shadow(0 0 8px rgba(199,125,255,0.9)); }
+        .auto-btn:active { transform: scale(0.94); }
+
+        .quick-mults {
+            display: flex; gap: 6px; margin: 0 16px 14px; padding: 3px 24px; flex-wrap: wrap;
+            background: #61300A; border: 1px solid #C47B20; border-radius: 12px;
+        }
+        .quick-mult {
+            flex: 1;
+            min-width: 45px;
+            text-align: center;
+            padding: 6px 0;
+            border-radius: 8px;
+            border: 1px solid #8B5306;
+            background: linear-gradient(180deg, #CBA668, #633D16);
+            color: #2e1a04;
+            text-shadow: 0 1px 1px rgba(255,255,255,0.25);
+            font-size: 0.66rem;
+            font-weight: 800;
+            cursor: pointer;
+        }
+        .quick-mult.active {
+            background: linear-gradient(180deg, #FAD31C, #CB8701);
+            color: #401E00; text-shadow: none; border-color: #FAD31C;
+        }
+
+        .hint-text { text-align: center; font-size: 0.68rem; color: #fff3d6; text-shadow: 0 1px 3px rgba(0,0,0,0.6); margin-bottom: 8px; padding: 0 20px; }
+        .result-msg { text-align: center; font-size: 0.85rem; font-weight: 700; min-height: 18px; margin-bottom: 8px; text-shadow: 0 1px 3px rgba(0,0,0,0.6); }
+        .result-msg.win { color: #7CFFA0; }
+        .result-msg.loss { color: #FF9D8A; }
+
+        .bottom-nav {
+            position: fixed;
+            bottom: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: calc(100% - 32px);
+            max-width: 448px;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            padding: 8px 6px;
+            background: #0D072C;
+            border: 1px solid #72378B;
+            border-radius: 24px;
+        }
+        .nav-item {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex: 1;
+        }
+        .nav-item img { height: 40px; width: auto; }
+    </style>
+</head>
+<body>
+    {% csrf_token %}
+    <div class="screen">
+        <a href="/lobby/" class="back-link">‹ Volver al lobby</a>
+        <div class="title-row"><img src="/static/images/characters/golden_jet_title.png" alt="Golden Jet"></div>
+
+        <div class="top-row">
+            <div class="billetera-chip">
+                <img src="/static/images/characters/golden_jet_billetera.png?v=2" alt="">
+                <span class="amount">$<span id="wallet">50.00</span></span>
+            </div>
+            <div class="apuesta-chip">
+                <button class="minus" id="betMinus" onclick="changeBet(-1)">-</button>
+                <span>
+                    <span class="label">APUESTA</span><br>
+                    <span class="amt">$<span id="betAmount">20</span></span>
+                </span>
+                <button class="plus" id="betPlus" onclick="changeBet(1)">+</button>
+            </div>
+        </div>
+
+        <div class="status-row">
+            <span class="status-pill flying" id="flightStatus">★ LISTO PARA VOLAR</span>
+            <span class="status-pill mult">MULT: <span id="liveMult">1.00</span>x</span>
+        </div>
+
+        <div class="graph-area" id="graphArea">
+            <svg class="graph-svg" id="graphSvg" viewBox="0 0 300 220" preserveAspectRatio="none">
+                <path id="graphPath" d="M0,220 L0,220" stroke="#FFD36E" stroke-width="3" fill="none"/>
+            </svg>
+            <img class="jet-sprite" id="jetSprite" src="/static/images/characters/golden_jet_avion.png" alt="">
+            <div class="explosion" id="explosion">
+                <div class="ring"></div>
+                <div class="core"></div>
+            </div>
+            <div class="mult-big" id="multBig">1.00x</div>
+        </div>
+
+        <div class="actions-row">
+            <button class="action-btn cobrar" onclick="cashOut()" id="cobrarBtn" disabled></button>
+            <button class="action-btn despegar" onclick="startFlight()" id="despegarBtn"></button>
+            <button class="auto-btn" id="autoBtn" onclick="toggleAutoPanel()" aria-label="Auto"></button>
+        </div>
+
+        <div class="quick-mults" id="quickMults">
+            <div class="quick-mult active" data-v="0">MANUAL</div>
+            <div class="quick-mult" data-v="1.50">1.50x</div>
+            <div class="quick-mult" data-v="2.00">2.00x</div>
+            <div class="quick-mult" data-v="2.50">2.50x</div>
+            <div class="quick-mult" data-v="5.00">5.00x</div>
+            <div class="quick-mult" data-v="10.00">10.0x</div>
+        </div>
+
+        <div class="result-msg" id="resultMsg"></div>
+        <div class="hint-text">Retira en cualquier momento antes de que el jet explote. Usa AUTO para elegir un objetivo automático.</div>
+    </div>
+
+    <div class="bottom-nav">
+        <a href="/lobby/" class="nav-item"><img src="/static/images/icons/nav_lobby.png" alt="Lobby"></a>
+        <a href="/promos/" class="nav-item"><img src="/static/images/icons/nav_promos.png" alt="Promos"></a>
+        <a href="/vip/" class="nav-item"><img src="/static/images/icons/nav_vip.png" alt="VIP"></a>
+        <a href="/profile/" class="nav-item"><img src="/static/images/icons/nav_perfil.png" alt="Perfil"></a>
+    </div>
+
+    <script>
+        let betAmount = 20;
+        let autoCashOutAt = 0; // 0 = manual, sin retiro automático
+        let flying = false;
+        let roundId = null;
+        let growthRate = 0.16;
+        let flightStart = 0;
+        let animFrame = null;
+        let statusInterval = null;
+        let cashingOut = false;
+
+        function toggleAutoPanel() {
+            document.getElementById('autoBtn').classList.toggle('active');
+        }
+
+        document.getElementById('quickMults').addEventListener('click', (e) => {
+            if (!e.target.classList.contains('quick-mult')) return;
+            document.querySelectorAll('.quick-mult').forEach(el => el.classList.remove('active'));
+            e.target.classList.add('active');
+            autoCashOutAt = parseFloat(e.target.dataset.v);
+        });
+
+        function csrfToken() {
+            return document.querySelector('[name="csrfmiddlewaretoken"]')?.value || '';
+        }
+
+        function changeBet(delta) {
+            if (flying) return;
+            betAmount = Math.max(1, betAmount + delta);
+            document.getElementById('betAmount').textContent = betAmount;
+        }
+
+        async function loadBalance() {
+            try {
+                const res = await fetch('/api/users/profile/');
+                if (res.ok) {
+                    const data = await res.json();
+                    document.getElementById('wallet').textContent = parseFloat(data.balance).toFixed(2);
+                }
+            } catch (e) {}
+        }
+
+        function graphXY(elapsed, multiplier) {
+            const x = Math.min(300, elapsed * 34);
+            const logScale = Math.min(1, Math.log(multiplier) / Math.log(50));
+            const y = 210 - logScale * 195;
+            return { x, y: Math.max(10, y) };
+        }
+
+        let lastTipPercent = { x: 0, y: 100 };
+
+        function drawGraph(elapsed, multiplier) {
+            const path = document.getElementById('graphPath');
+            const steps = 30;
+            const pts = [];
+            for (let i = 0; i <= steps; i++) {
+                const t = (elapsed * i) / steps;
+                const m = Math.exp(growthRate * t);
+                const { x, y } = graphXY(t, m);
+                pts.push(`${x},${y}`);
+            }
+            path.setAttribute('d', 'M' + pts.join(' L'));
+
+            const tip = graphXY(elapsed, multiplier);
+            lastTipPercent = { x: (tip.x / 300) * 100, y: (tip.y / 220) * 100 };
+            const jet = document.getElementById('jetSprite');
+            jet.style.left = `${lastTipPercent.x}%`;
+            jet.style.top = `${lastTipPercent.y}%`;
+            jet.style.transform = `translate(-50%, -50%) rotate(${-25 - Math.min(elapsed, 5) * 3}deg)`;
+        }
+
+        function resetGraph() {
+            document.getElementById('graphPath').setAttribute('d', 'M0,220 L0,220');
+            document.getElementById('jetSprite').classList.remove('show');
+            document.getElementById('explosion').classList.remove('show');
+        }
+
+        function triggerExplosion() {
+            const explosion = document.getElementById('explosion');
+            const graphArea = document.getElementById('graphArea');
+            explosion.style.left = `${lastTipPercent.x}%`;
+            explosion.style.top = `${lastTipPercent.y}%`;
+            explosion.classList.remove('show');
+            void explosion.offsetWidth;
+            explosion.classList.add('show');
+
+            graphArea.classList.remove('shake', 'flash-red');
+            void graphArea.offsetWidth;
+            graphArea.classList.add('shake', 'flash-red');
+            setTimeout(() => graphArea.classList.remove('flash-red'), 150);
+            setTimeout(() => explosion.classList.remove('show'), 650);
+        }
+
+        async function startFlight() {
+            if (flying) return;
+
+            const response = await fetch('/api/games/play_golden_jet/', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken() },
+                body: JSON.stringify({ bet_amount: betAmount })
+            });
+            const data = await response.json();
+            const resultMsg = document.getElementById('resultMsg');
+
+            if (!response.ok) {
+                resultMsg.textContent = data.error || 'Error al despegar';
+                resultMsg.className = 'result-msg loss';
+                return;
+            }
+
+            flying = true;
+            cashingOut = false;
+            roundId = data.round_id;
+            growthRate = data.growth_rate;
+            flightStart = performance.now();
+            document.getElementById('wallet').textContent = parseFloat(data.balance).toFixed(2);
+            document.getElementById('despegarBtn').disabled = true;
+            document.getElementById('cobrarBtn').disabled = false;
+            document.getElementById('flightStatus').textContent = '✈ VUELO EN CURSO';
+            document.getElementById('multBig').classList.remove('crashed');
+            resultMsg.textContent = '';
+            resetGraph();
+            document.getElementById('jetSprite').classList.add('show');
+
+            animFrame = requestAnimationFrame(tick);
+            statusInterval = setInterval(pollStatus, 400);
+        }
+
+        function tick(now) {
+            if (!flying) return;
+            const elapsed = (now - flightStart) / 1000;
+            const currentMult = Math.exp(growthRate * elapsed);
+            document.getElementById('liveMult').textContent = currentMult.toFixed(2);
+            document.getElementById('multBig').textContent = currentMult.toFixed(2) + 'x';
+            drawGraph(elapsed, currentMult);
+
+            if (autoCashOutAt > 0 && currentMult >= autoCashOutAt && !cashingOut) {
+                cashOut();
+            }
+
+            animFrame = requestAnimationFrame(tick);
+        }
+
+        async function pollStatus() {
+            if (!flying || !roundId) return;
+            try {
+                const response = await fetch('/api/games/golden_jet_status/', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken() },
+                    body: JSON.stringify({ round_id: roundId })
+                });
+                const data = await response.json();
+                if (response.ok && data.crashed) {
+                    handleCrash(data.final_multiplier);
+                }
+            } catch (e) {}
+        }
+
+        function stopFlightLoops() {
+            flying = false;
+            if (animFrame) cancelAnimationFrame(animFrame);
+            if (statusInterval) clearInterval(statusInterval);
+            animFrame = null;
+            statusInterval = null;
+        }
+
+        function handleCrash(finalMultiplier) {
+            stopFlightLoops();
+            triggerExplosion();
+            document.getElementById('jetSprite').classList.remove('show');
+            document.getElementById('graphPath').setAttribute('d', 'M0,220 L0,220');
+            document.getElementById('flightStatus').textContent = '💥 EXPLOTÓ';
+            document.getElementById('multBig').textContent = finalMultiplier.toFixed(2) + 'x';
+            document.getElementById('multBig').classList.add('crashed');
+            document.getElementById('despegarBtn').disabled = false;
+            document.getElementById('cobrarBtn').disabled = true;
+            const resultMsg = document.getElementById('resultMsg');
+            resultMsg.textContent = 'El jet explotó antes de tu retiro. Perdiste la apuesta.';
+            resultMsg.className = 'result-msg loss';
+            roundId = null;
+        }
+
+        async function cashOut() {
+            if (!flying || cashingOut) return;
+            cashingOut = true;
+            document.getElementById('cobrarBtn').disabled = true;
+
+            const response = await fetch('/api/games/cashout_golden_jet/', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken() },
+                body: JSON.stringify({ round_id: roundId })
+            });
+            const data = await response.json();
+            const resultMsg = document.getElementById('resultMsg');
+
+            if (!response.ok) {
+                resultMsg.textContent = data.error || 'Error al retirar';
+                resultMsg.className = 'result-msg loss';
+                cashingOut = false;
+                document.getElementById('cobrarBtn').disabled = false;
+                return;
+            }
+
+            stopFlightLoops();
+            document.getElementById('jetSprite').classList.remove('show');
+            document.getElementById('graphPath').setAttribute('d', 'M0,220 L0,220');
+            document.getElementById('wallet').textContent = parseFloat(data.balance).toFixed(2);
+            document.getElementById('despegarBtn').disabled = false;
+            roundId = null;
+            cashingOut = false;
+
+            const gr = data.game_result;
+            if (data.status === 'win') {
+                document.getElementById('flightStatus').textContent = '✅ RETIRADO';
+                document.getElementById('multBig').textContent = gr.final_multiplier.toFixed(2) + 'x';
+                resultMsg.textContent = `¡Retiraste en ${gr.final_multiplier.toFixed(2)}x! Ganaste $${gr.payout.toFixed(2)}`;
+                resultMsg.className = 'result-msg win';
+            } else {
+                handleCrash(gr.final_multiplier);
+            }
+        }
+
+        loadBalance();
+    </script>
+</body>
+</html>

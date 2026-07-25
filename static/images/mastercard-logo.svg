@@ -1,0 +1,10 @@
+<svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
+  <rect width="200" height="100" fill="#fff" rx="8"/>
+  <!-- Red circle -->
+  <circle cx="70" cy="50" r="25" fill="#EB001B"/>
+  <!-- Orange circle -->
+  <circle cx="130" cy="50" r="25" fill="#F79E1B"/>
+  <!-- Overlap area (purple) -->
+  <ellipse cx="100" cy="50" rx="15" ry="25" fill="#FF5F00" opacity="0.8"/>
+  <text x="100" y="75" text-anchor="middle" font-size="12" font-weight="bold" fill="#1434CB">MasterCard</text>
+</svg>

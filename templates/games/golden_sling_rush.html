@@ -1,0 +1,837 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bird Blast Bonanza - Royal Casino Core</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Roboto, Tahoma, sans-serif;
+            background: #1a0a2e;
+            min-height: 100vh;
+            color: #fff;
+        }
+        .screen {
+            max-width: 480px;
+            margin: 0 auto;
+            min-height: 100vh;
+            padding-bottom: 96px;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            background: linear-gradient(180deg, rgba(26,10,46,0.02) 0%, rgba(26,10,46,0.1) 60%, rgba(26,10,46,0.55) 100%),
+                        url('/static/images/characters/bird_blast_background.png');
+            background-size: cover;
+            background-position: center top;
+            background-repeat: no-repeat;
+        }
+        .top-row { display: flex; align-items: center; justify-content: space-between; padding: 10px 16px 0; }
+        .back-link {
+            display: inline-flex; align-items: center; gap: 6px;
+            color: #ffe8b8; text-decoration: none; font-size: 0.85rem;
+            text-shadow: 0 1px 3px rgba(0,0,0,0.7);
+        }
+        .sound-btn {
+            width: 34px; height: 34px; border-radius: 50%;
+            border: 1px solid rgba(255,255,255,0.4); background: rgba(0,0,0,0.35);
+            color: #fff; font-size: 1rem; cursor: pointer;
+        }
+        .title-row { display: flex; align-items: center; justify-content: center; margin: 2px 0 4px; }
+        .title-row img { height: 108px; width: auto; filter: drop-shadow(0 6px 14px rgba(0,0,0,0.7)); }
+
+        .chips-row { display: flex; justify-content: space-between; gap: 6px; padding: 0 14px; margin-bottom: 6px; flex-wrap: wrap; align-items: center; }
+        .chip-billetera {
+            display: inline-flex; align-items: center; gap: 6px;
+            background: #000114; border: 1px solid #FFB84C; border-radius: 8px;
+            padding: 6px 10px; font-size: 0.68rem; font-weight: 700; white-space: nowrap;
+        }
+        .chip-billetera .icon-badge { width: 16px; height: 16px; flex-shrink: 0; }
+        .chip-apuesta {
+            display: inline-flex; align-items: center; gap: 6px;
+            background: #351C4E; border: 2px solid #B45CFF; border-radius: 24px;
+            padding: 5px 12px 5px 6px; font-size: 0.68rem; font-weight: 700; white-space: nowrap;
+        }
+        .chip-apuesta .icon-badge {
+            width: 20px; height: 20px; flex-shrink: 0; border-radius: 6px;
+            border: 2px solid #D9A6FF; background: linear-gradient(180deg, #E2BBFF, #8A2BE2);
+            display: flex; align-items: center; justify-content: center;
+        }
+        .chips-row-2 { display: flex; justify-content: center; gap: 8px; padding: 0 14px; margin-bottom: 6px; }
+        .chip-mult, .chip-premio {
+            display: inline-flex; align-items: center; gap: 6px;
+            background: rgba(0,0,0,0.5); border: 1px solid #FFD36E; border-radius: 20px;
+            padding: 5px 14px; font-size: 0.72rem; font-weight: 800; white-space: nowrap;
+            color: #FFD36E;
+        }
+        .chip-premio { border-color: #4CD964; color: #7CFFA0; }
+
+        .game-area {
+            position: relative; width: 100%; max-width: 464px; margin: 0 auto; padding: 0 10px;
+            flex: 1; display: flex; flex-direction: column; justify-content: flex-end;
+        }
+
+        .scene { position: relative; width: 100%; height: 300px; }
+
+        /* ---- Panel PRÓXIMOS ---- */
+        .proximos-panel {
+            position: absolute; top: 14px; left: 0; z-index: 6;
+            display: flex; flex-direction: column; align-items: center; gap: 5px;
+            padding: 8px 6px 9px; border-radius: 12px;
+            border: 3px solid #C47B20; background: rgba(38,13,65,0.92);
+        }
+        .proximos-title { font-size: 0.5rem; font-weight: 800; letter-spacing: 0.04em; color: #FFD36E; }
+        .proximos-icon { width: 34px; height: 34px; border-radius: 50%; overflow: hidden; }
+        .proximos-icon img { width: 100%; height: 100%; object-fit: cover; }
+
+        /* ---- Contador de huevos dorados: columna a la derecha, para no tapar la torre ---- */
+        .egg-counter {
+            position: absolute; top: 50%; right: 2px; transform: translateY(-50%); z-index: 6;
+            display: flex; flex-direction: column; gap: 5px; padding: 6px 5px; border-radius: 12px;
+            background: rgba(0,0,0,0.4);
+        }
+        .egg-slot { width: 20px; height: 20px; opacity: 0.3; filter: grayscale(1); transition: opacity 0.3s, filter 0.3s, transform 0.3s; }
+        .egg-slot img { width: 100%; height: 100%; object-fit: contain; }
+        .egg-slot.filled { opacity: 1; filter: grayscale(0) drop-shadow(0 0 6px rgba(255,211,110,0.9)); transform: scale(1.15); }
+
+        /* ---- Fila de 3 torres de cajas: cada lanzamiento apunta a una torre distinta ---- */
+        .towers-row {
+            position: absolute; left: 70px; right: 38px; top: 2px; height: 190px;
+            display: flex; justify-content: space-between; align-items: flex-end;
+        }
+        .tower-item { position: relative; width: 78px; height: 190px; }
+        .crate {
+            position: absolute; left: 50%; transform: translateX(-50%);
+            width: 58px; height: 58px; object-fit: contain;
+            filter: drop-shadow(0 6px 8px rgba(0,0,0,0.55));
+        }
+        .crate-r1 { top: 0; z-index: 4; }
+        .crate-r2 { top: 40px; z-index: 3; }
+        .crate-r3 { top: 80px; z-index: 2; }
+        .crate-r4 { top: 120px; z-index: 1; width: 62px; height: 62px; }
+
+        /* Soporte de madera: para que las cajas no parezcan flotando */
+        .tower-support {
+            position: absolute; left: 50%; top: 178px; transform: translateX(-50%);
+            width: 78px; height: 15px;
+            background: linear-gradient(180deg, #8a5a2e 0%, #6b3f1d 55%, #4a2a12 100%);
+            border: 2px solid #3a1f0d; border-radius: 4px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.5);
+        }
+        .tower-support::before, .tower-support::after {
+            content: ''; position: absolute; top: -6px; width: 8px; height: 20px;
+            background: linear-gradient(180deg, #6b3f1d, #3a1f0d);
+            border: 2px solid #2a1608; border-radius: 2px;
+        }
+        .tower-support::before { left: 4px; }
+        .tower-support::after { right: 4px; }
+
+        .tower-item.hit .crate-r2, .tower-item.hit .crate-r3, .tower-item.hit .crate-r4 { animation: tower-shake 0.5s ease; }
+        .tower-item.hit .crate-r1 { animation: crate-fall-hit 0.7s ease; }
+        .tower-item.resist .crate { animation: tower-resist 0.5s ease; }
+        @keyframes tower-shake {
+            0%, 100% { transform: translateX(-50%) translateY(0) rotate(0deg); }
+            20% { transform: translateX(-50%) translate(-3px,-2px) rotate(-2deg); }
+            45% { transform: translateX(-50%) translate(3px,1px) rotate(2deg); }
+            70% { transform: translateX(-50%) translate(-2px,0) rotate(-1deg); }
+        }
+        @keyframes tower-resist {
+            0%, 100% { transform: translateX(-50%) translate(0,0); }
+            25% { transform: translateX(-50%) translate(-5px,0); }
+            50% { transform: translateX(-50%) translate(5px,0); }
+            75% { transform: translateX(-50%) translate(-3px,0); }
+        }
+        /* La caja de arriba se cae y rebota al golpearla (simula el impacto sin vaciar la torre) */
+        @keyframes crate-fall-hit {
+            0% { transform: translateX(-50%) translateY(0) rotate(0deg); opacity: 1; }
+            35% { transform: translateX(-50%) translateY(40px) rotate(35deg); opacity: 1; }
+            55% { transform: translateX(-50%) translateY(85px) rotate(70deg); opacity: 0; }
+            56% { transform: translateX(-50%) translateY(-14px) rotate(0deg); opacity: 0; }
+            100% { transform: translateX(-50%) translateY(0) rotate(0deg); opacity: 1; }
+        }
+
+        .impact-popup {
+            position: absolute; left: 50%; top: 30px; transform: translateX(-50%) scale(0.5);
+            width: 70px; height: 70px; z-index: 7; opacity: 0; pointer-events: none;
+        }
+        .impact-popup img { width: 100%; height: 100%; object-fit: contain; filter: drop-shadow(0 0 14px rgba(255,211,110,0.9)); }
+        .impact-popup.show { animation: impact-pop 0.9s ease; }
+        @keyframes impact-pop {
+            0% { opacity: 0; transform: translateX(-50%) scale(0.4); }
+            25% { opacity: 1; transform: translateX(-50%) scale(1.15); }
+            75% { opacity: 1; transform: translateX(-50%) scale(1); }
+            100% { opacity: 0; transform: translateX(-50%) scale(0.9) translateY(-14px); }
+        }
+
+        .mult-float {
+            position: absolute; top: 85px; left: 50%; transform: translate(-50%, -50%);
+            font-weight: 900; font-size: 1.4rem; color: #FFD36E;
+            text-shadow: 0 0 10px rgba(255,211,110,0.9), 0 2px 4px rgba(0,0,0,0.7);
+            opacity: 0; pointer-events: none; z-index: 7;
+        }
+        .mult-float.show { animation: mult-float-anim 1s ease-out; }
+        @keyframes mult-float-anim {
+            0% { opacity: 0; transform: translate(-50%, -30%) scale(0.6); }
+            20% { opacity: 1; transform: translate(-50%, -60%) scale(1.15); }
+            75% { opacity: 1; transform: translate(-50%, -90%) scale(1); }
+            100% { opacity: 0; transform: translate(-50%, -110%) scale(0.95); }
+        }
+
+        /* ---- Catapulta, pájaro: se agranda y gira para apuntar a la torre objetivo ---- */
+        .trajectory-line {
+            position: absolute; bottom: 78px; left: 50%; width: 56px; height: 86px;
+            transform: translateX(-50%) scaleX(-1);
+            opacity: 0; pointer-events: none; transition: opacity 0.3s;
+        }
+        .trajectory-line img { width: 100%; height: 100%; object-fit: contain; }
+        .trajectory-line.show { opacity: 0.85; animation: traj-pulse 1s ease-in-out infinite; }
+        @keyframes traj-pulse { 0%,100% { opacity: 0.55; } 50% { opacity: 0.95; } }
+
+        .catapult-wrap {
+            position: absolute; bottom: 0; left: 50%; width: 104px; height: 104px;
+            transform: translateX(-50%) rotate(var(--aim, 0deg)); transform-origin: 50% 92%;
+            transition: transform 0.18s ease-out;
+        }
+        .catapult-wrap img { width: 100%; height: 100%; object-fit: contain; filter: drop-shadow(0 6px 10px rgba(0,0,0,0.6)); }
+        /* Sombra de contacto: ancla visualmente la catapulta al suelo para que no parezca flotando */
+        .catapult-wrap::after {
+            content: ''; position: absolute; left: 50%; bottom: 2px; transform: translateX(-50%);
+            width: 74px; height: 16px; border-radius: 50%; z-index: -1;
+            background: radial-gradient(ellipse at center, rgba(0,0,0,0.55) 0%, rgba(0,0,0,0) 72%);
+        }
+        /* Movimiento de catapulta bien marcado: se estira hacia atrás y dispara con rebote, girando hacia la torre objetivo (--aim) */
+        .catapult-wrap.swing { animation: catapult-swing 0.6s cubic-bezier(0.36,0.07,0.19,0.97); }
+        @keyframes catapult-swing {
+            0% { transform: translateX(-50%) rotate(var(--aim, 0deg)) scale(1); }
+            18% { transform: translateX(-50%) rotate(calc(var(--aim, 0deg) + 18deg)) scale(1.05); }
+            40% { transform: translateX(-50%) rotate(calc(var(--aim, 0deg) - 38deg)) scale(0.96); }
+            65% { transform: translateX(-50%) rotate(calc(var(--aim, 0deg) + 20deg)) scale(1.04); }
+            82% { transform: translateX(-50%) rotate(calc(var(--aim, 0deg) - 8deg)) scale(1); }
+            100% { transform: translateX(-50%) rotate(var(--aim, 0deg)) scale(1); }
+        }
+
+        .bird-slot {
+            position: absolute; bottom: 26px; left: 50%; width: 46px; height: 46px;
+            transform: translateX(-50%); transition: opacity 0.15s;
+        }
+        .bird-slot img { width: 100%; height: 100%; object-fit: contain; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.5)); }
+
+        .flying-bird {
+            position: absolute; top: 0; left: 0; width: 58px; height: 58px;
+            pointer-events: none; will-change: transform; z-index: 5;
+            filter: drop-shadow(0 4px 6px rgba(0,0,0,0.5));
+        }
+        .flying-bird img { width: 100%; height: 100%; object-fit: contain; }
+
+        .coin-particle {
+            position: absolute; top: 50%; left: 50%; width: 26px; height: 26px;
+            pointer-events: none; z-index: 6; will-change: transform, opacity;
+        }
+        .coin-particle img { width: 100%; height: 100%; object-fit: contain; }
+
+        .bonus-banner {
+            position: absolute; inset: 0; display: none; flex-direction: column;
+            align-items: center; justify-content: center; gap: 4px; z-index: 8;
+            background: rgba(10,0,20,0.6); border-radius: 16px;
+        }
+        .bonus-banner.show { display: flex; animation: bonus-pop 0.4s ease; }
+        @keyframes bonus-pop { from { opacity: 0; transform: scale(0.8); } to { opacity: 1; transform: scale(1); } }
+        .bonus-banner .egg-img { width: 70px; filter: drop-shadow(0 0 16px rgba(255,211,110,0.9)); animation: egg-glow 0.8s ease-in-out infinite alternate; }
+        @keyframes egg-glow { from { transform: scale(1); } to { transform: scale(1.08); } }
+        .bonus-banner .letrero-img { width: 200px; max-width: 80%; }
+
+        .result-msg { text-align: center; font-size: 0.82rem; font-weight: 700; min-height: 34px; padding: 2px 20px; margin-top: 4px; }
+        .result-msg.win { color: #7CFFA0; }
+        .result-msg.gold { color: #FFD36E; }
+        .result-msg.bonus { color: #FF9DE2; }
+        .result-msg.loss { color: #ff6b6b; }
+        .result-msg.info { color: #d9c9ff; }
+
+        .action-wrap { position: relative; display: flex; flex-direction: column; align-items: center; gap: 8px; margin-top: 2px; }
+        .btn-row { display: flex; flex-direction: row; gap: 10px; width: 100%; max-width: 320px; }
+        .btn-lanzar, .btn-cobrar {
+            flex: 1; height: 54px; border: none; cursor: pointer;
+            appearance: none; -webkit-appearance: none;
+            background-color: transparent; background-size: contain; background-position: center; background-repeat: no-repeat;
+            transition: opacity 0.2s, transform 0.15s;
+        }
+        .mascot-corner {
+            position: absolute; right: -4px; top: -74px; width: 84px; z-index: 3; pointer-events: none;
+        }
+        .mascot-corner img { width: 100%; height: auto; display: block; filter: drop-shadow(0 6px 10px rgba(0,0,0,0.55)); }
+        .btn-lanzar { background-image: url('/static/images/characters/bird_blast_btn_lanzar.png'); }
+        .btn-cobrar { background-image: url('/static/images/characters/bird_blast_btn_cobrar.png'); opacity: 0.4; pointer-events: none; }
+        .btn-cobrar.enabled { opacity: 1; pointer-events: auto; }
+        .btn-lanzar:disabled { opacity: 0.5; cursor: not-allowed; pointer-events: none; }
+        .btn-lanzar:active, .btn-cobrar:active { transform: scale(0.96); }
+
+        .bet-row { display: flex; align-items: center; justify-content: center; gap: 10px; margin-top: 4px; }
+        .bet-btn {
+            width: 32px; height: 32px; border-radius: 50%;
+            border: 1px solid rgba(255,255,255,0.4); background: rgba(0,0,0,0.4);
+            color: #fff; font-size: 1rem; cursor: pointer;
+        }
+        .bet-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+        .bet-amount { font-size: 1rem; font-weight: 800; min-width: 56px; text-align: center; }
+
+        .hint-text {
+            text-align: center; font-size: 0.66rem; font-weight: 700; color: #FF9DE2;
+            margin: 8px auto 3px; padding: 8px 18px; max-width: 260px;
+            border-radius: 14px; border: 2px solid #B45CFF; background: rgba(59,7,100,0.85);
+        }
+
+        .bottom-nav {
+            position: fixed; bottom: 10px; left: 50%; transform: translateX(-50%);
+            width: calc(100% - 32px); max-width: 448px;
+            display: flex; justify-content: space-around; align-items: center;
+            padding: 8px 6px; background: #0D072C; border: 1px solid #72378B; border-radius: 24px;
+            z-index: 50;
+        }
+        .nav-item { display: flex; align-items: center; justify-content: center; flex: 1; }
+        .nav-item img { height: 40px; width: auto; filter: grayscale(1) brightness(1.6) opacity(0.55); }
+    </style>
+</head>
+<body>
+    {% csrf_token %}
+    <div class="screen">
+        <div class="top-row">
+            <a href="/lobby/" class="back-link">‹ Volver al lobby</a>
+            <button class="sound-btn" id="soundBtn" onclick="toggleSound()">🔊</button>
+        </div>
+        <div class="title-row">
+            <img src="/static/images/characters/bird_blast_title.png" alt="Bird Blast Bonanza">
+        </div>
+
+        <div class="chips-row">
+            <span class="chip-billetera">
+                <svg class="icon-badge" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <rect x="2" y="6" width="20" height="14" rx="2.5" stroke="#FFB84C" stroke-width="1.8"/>
+                    <path d="M2 10h20" stroke="#FFB84C" stroke-width="1.8"/>
+                    <circle cx="17" cy="15" r="1.6" fill="#FFB84C"/>
+                </svg>
+                BILLETERA: $<span id="wallet">0.00</span>
+            </span>
+            <span class="chip-apuesta">
+                <span class="icon-badge">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <circle cx="12" cy="12" r="8" stroke="#3B0764" stroke-width="2"/>
+                        <circle cx="12" cy="12" r="3.5" fill="#3B0764"/>
+                    </svg>
+                </span>
+                APUESTA: $<span id="betDisplay">1.00</span>
+            </span>
+        </div>
+        <div class="chips-row-2">
+            <span class="chip-mult">MULTIPLICADOR: x<span id="currentMultiplier">1.00</span></span>
+            <span class="chip-premio">PREMIO: $<span id="potentialPayout">0.00</span></span>
+        </div>
+
+        <div class="game-area">
+            <div class="scene" id="scene">
+                <div class="egg-counter" id="eggCounter">
+                    <div class="egg-slot" data-slot="0"><img src="/static/images/characters/bird_blast_huevo_dorado.png" alt=""></div>
+                    <div class="egg-slot" data-slot="1"><img src="/static/images/characters/bird_blast_huevo_dorado.png" alt=""></div>
+                    <div class="egg-slot" data-slot="2"><img src="/static/images/characters/bird_blast_huevo_dorado.png" alt=""></div>
+                </div>
+
+                <div class="proximos-panel">
+                    <div class="proximos-title">PRÓXIMOS</div>
+                    <div class="proximos-icon"><img id="prox0" src="/static/images/characters/bird_blast_proximo_azul.png" alt=""></div>
+                    <div class="proximos-icon"><img id="prox1" src="/static/images/characters/bird_blast_proximo_rojo.png" alt=""></div>
+                    <div class="proximos-icon"><img id="prox2" src="/static/images/characters/bird_blast_proximo_negro.png" alt=""></div>
+                </div>
+
+                <div class="towers-row">
+                    <div class="tower-item" id="tower0">
+                        <div class="tower-support"></div>
+                        <img class="crate crate-r1" src="/static/images/symbols/bird_blast_block_dorado.png" alt="">
+                        <img class="crate crate-r2" src="/static/images/symbols/bird_blast_block_cristal.png" alt="">
+                        <img class="crate crate-r3" src="/static/images/symbols/bird_blast_block_cofre.png" alt="">
+                        <img class="crate crate-r4" src="/static/images/symbols/bird_blast_block_comun.png" alt="">
+                    </div>
+                    <div class="tower-item" id="tower1">
+                        <div class="tower-support"></div>
+                        <img class="crate crate-r1" src="/static/images/symbols/bird_blast_block_corona.png" alt="">
+                        <img class="crate crate-r2" src="/static/images/symbols/bird_blast_block_cofre.png" alt="">
+                        <img class="crate crate-r3" src="/static/images/symbols/bird_blast_block_cristal.png" alt="">
+                        <img class="crate crate-r4" src="/static/images/symbols/bird_blast_block_comun.png" alt="">
+                    </div>
+                    <div class="tower-item" id="tower2">
+                        <div class="tower-support"></div>
+                        <img class="crate crate-r1" src="/static/images/symbols/bird_blast_block_cristal.png" alt="">
+                        <img class="crate crate-r2" src="/static/images/symbols/bird_blast_block_dorado.png" alt="">
+                        <img class="crate crate-r3" src="/static/images/symbols/bird_blast_block_cofre.png" alt="">
+                        <img class="crate crate-r4" src="/static/images/symbols/bird_blast_block_comun.png" alt="">
+                    </div>
+                </div>
+
+                <div class="impact-popup" id="impactPopup">
+                    <img id="impactImg" src="/static/images/symbols/bird_blast_block_comun.png" alt="">
+                </div>
+                <div class="mult-float" id="multFloat"></div>
+
+                <div class="trajectory-line" id="trajectoryLine">
+                    <img src="/static/images/characters/bird_blast_trayectoria.png" alt="">
+                </div>
+                <div class="catapult-wrap" id="catapultWrap">
+                    <img src="/static/images/characters/bird_blast_catapulta.png" alt="">
+                </div>
+                <div class="bird-slot" id="birdSlot">
+                    <img id="birdSlotImg" src="/static/images/characters/bird_rojo.png" alt="">
+                </div>
+                <div class="bonus-banner" id="bonusBanner">
+                    <img class="egg-img" src="/static/images/characters/bird_blast_huevo_dorado.png" alt="">
+                    <img class="letrero-img" src="/static/images/characters/bird_blast_letrero_ganaste.png" alt="">
+                </div>
+            </div>
+
+            <div class="result-msg info" id="resultMsg">Apostá y presioná LANZAR para atacar la torre.</div>
+
+            <div class="action-wrap">
+                <div class="mascot-corner"><img src="/static/images/characters/bird_blast_mascot.png" alt=""></div>
+                <div class="btn-row">
+                    <button class="btn-lanzar" id="lanzarBtn" onclick="lanzar()"></button>
+                    <button class="btn-cobrar" id="cobrarBtn" onclick="cobrar()"></button>
+                </div>
+                <div class="bet-row">
+                    <button class="bet-btn" id="betMinus" onclick="changeBet(-1)">-</button>
+                    <span class="bet-amount">$<span id="betAmount">1</span></span>
+                    <button class="bet-btn" id="betPlus" onclick="changeBet(1)">+</button>
+                </div>
+            </div>
+
+            <div class="hint-text">Cada lanzamiento sube tu multiplicador, pero el riesgo de trampa crece. Retirate cuando quieras asegurar tu premio.</div>
+        </div>
+    </div>
+
+    <div class="bottom-nav">
+        <a href="/lobby/" class="nav-item"><img src="/static/images/icons/nav_lobby.png" alt="Lobby"></a>
+        <a href="/promos/" class="nav-item"><img src="/static/images/icons/nav_promos.png" alt="Promos"></a>
+        <a href="/vip/" class="nav-item"><img src="/static/images/icons/nav_vip.png" alt="VIP"></a>
+        <a href="/profile/" class="nav-item"><img src="/static/images/icons/nav_perfil.png" alt="Perfil"></a>
+    </div>
+
+    <script>
+        let betAmount = 1;
+        let busy = false;
+        let roundId = null;
+        let hits = 0;
+        let eggsCount = 0;
+
+        const BIRD_IMAGES = {
+            rey: '/static/images/characters/bird_rojo.png',
+            veloz: '/static/images/characters/bird_azul.png',
+            bomba: '/static/images/characters/bird_negro.png',
+            dorado: '/static/images/characters/bird_blast_mascot.png',
+        };
+        const BLOCK_IMAGES = {
+            comun: '/static/images/symbols/bird_blast_block_comun.png',
+            cristal: '/static/images/symbols/bird_blast_block_cristal.png',
+            cofre: '/static/images/symbols/bird_blast_block_cofre.png',
+            dorado: '/static/images/symbols/bird_blast_block_dorado.png',
+            corona: '/static/images/symbols/bird_blast_block_corona.png',
+            fallo: '/static/images/symbols/bird_blast_block_comun.png',
+        };
+        const OUTCOME_LABEL = {
+            comun: 'bloques comunes', cristal: 'un cristal multiplicador', cofre: 'un cofre bonus',
+            dorado: 'un bloque dorado', corona: '¡LA CORONA JACKPOT!',
+        };
+        // Cola PREDICTIVA de "próximos": el pájaro que se ve en la primera bolita
+        // es el mismo que se lanza al presionar LANZAR (ver lanzar()).
+        const PROXIMO_IMAGES = {
+            rey: '/static/images/characters/bird_blast_proximo_rojo.png',
+            veloz: '/static/images/characters/bird_blast_proximo_azul.png',
+            bomba: '/static/images/characters/bird_blast_proximo_negro.png',
+        };
+        const PROXIMO_KEYS = Object.keys(PROXIMO_IMAGES);
+        let proximosQueue = [randomProximo(), randomProximo(), randomProximo()];
+
+        function randomProximo() {
+            return PROXIMO_KEYS[Math.floor(Math.random() * PROXIMO_KEYS.length)];
+        }
+        function renderProximos() {
+            document.getElementById('prox0').src = PROXIMO_IMAGES[proximosQueue[0]];
+            document.getElementById('prox1').src = PROXIMO_IMAGES[proximosQueue[1]];
+            document.getElementById('prox2').src = PROXIMO_IMAGES[proximosQueue[2]];
+        }
+        function rotateProximos() {
+            proximosQueue.shift();
+            proximosQueue.push(randomProximo());
+            renderProximos();
+        }
+
+        // Cada pájaro apunta siempre a una torre distinta: la catapulta gira y el
+        // vuelo del pájaro cambia de dirección según cuál vaya a lanzarse.
+        const BIRD_TOWER_INDEX = { rey: 1, veloz: 0, bomba: 2 };
+        const AIM_DEG = { 0: -16, 1: 0, 2: 16 };
+
+        /* ---------- Sonido (Web Audio API, sintetizado, sin archivos externos) ---------- */
+        let audioCtx = null;
+        let muted = localStorage.getItem('birdBlastMuted') === '1';
+
+        function getCtx() {
+            if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            return audioCtx;
+        }
+        function beep(freq, duration, type, gainValue, delay) {
+            if (muted) return;
+            const ctx = getCtx();
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.type = type || 'sine';
+            osc.frequency.value = freq;
+            gain.gain.value = gainValue || 0.15;
+            osc.connect(gain).connect(ctx.destination);
+            const startTime = ctx.currentTime + (delay || 0);
+            osc.start(startTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, startTime + duration);
+            osc.stop(startTime + duration + 0.02);
+        }
+        function playLaunchSound() { beep(220, 0.12, 'triangle', 0.2); beep(440, 0.1, 'triangle', 0.12, 0.05); }
+        function playImpactSound() { beep(150, 0.15, 'square', 0.2); }
+        function playWinSound() { [523.25, 659.25, 783.99].forEach((f, i) => beep(f, 0.2, 'sine', 0.2, i * 0.09)); }
+        function playGoldSound() { [523.25, 659.25, 783.99, 987.77].forEach((f, i) => beep(f, 0.25, 'sine', 0.2, i * 0.1)); }
+        function playCoronaSound() { [392, 523.25, 659.25, 783.99, 1046.5].forEach((f, i) => beep(f, 0.3, 'triangle', 0.22, i * 0.09)); }
+        function playBonusSound() { [392, 523.25, 659.25].forEach((f, i) => beep(f, 0.25, 'triangle', 0.2, i * 0.12)); }
+        function playEggSound() { [659.25, 880].forEach((f, i) => beep(f, 0.15, 'sine', 0.18, i * 0.08)); }
+        function playTrapSound() { beep(120, 0.4, 'sawtooth', 0.2, 0); }
+        function playCashoutSound() { [659.25, 783.99, 1046.5].forEach((f, i) => beep(f, 0.25, 'sine', 0.2, i * 0.1)); }
+
+        function toggleSound() {
+            muted = !muted;
+            localStorage.setItem('birdBlastMuted', muted ? '1' : '0');
+            document.getElementById('soundBtn').textContent = muted ? '🔇' : '🔊';
+        }
+
+        function csrfToken() {
+            return document.querySelector('[name="csrfmiddlewaretoken"]')?.value || '';
+        }
+
+        function changeBet(delta) {
+            if (roundId) return;
+            betAmount = Math.max(1, betAmount + delta);
+            document.getElementById('betAmount').textContent = betAmount;
+            document.getElementById('betDisplay').textContent = betAmount.toFixed(2);
+        }
+
+        async function loadBalance() {
+            try {
+                const res = await fetch('/api/users/profile/');
+                if (res.ok) {
+                    const data = await res.json();
+                    document.getElementById('wallet').textContent = parseFloat(data.balance).toFixed(2);
+                }
+            } catch (e) {}
+        }
+
+        function sleep(ms) { return new Promise(res => setTimeout(res, ms)); }
+
+        /* ---------- Animación de la escena: catapulta, pájaro volador, torre, huevos ---------- */
+        const scene = document.getElementById('scene');
+        const catapultWrap = document.getElementById('catapultWrap');
+        const birdSlot = document.getElementById('birdSlot');
+        const birdSlotImg = document.getElementById('birdSlotImg');
+        const trajectoryLine = document.getElementById('trajectoryLine');
+        const towerEls = [document.getElementById('tower0'), document.getElementById('tower1'), document.getElementById('tower2')];
+        const impactPopup = document.getElementById('impactPopup');
+        const impactImg = document.getElementById('impactImg');
+        const multFloat = document.getElementById('multFloat');
+        const bonusBanner = document.getElementById('bonusBanner');
+        const eggSlots = Array.from(document.querySelectorAll('.egg-slot'));
+
+        function setBird(birdKey) {
+            birdSlotImg.src = BIRD_IMAGES[birdKey] || BIRD_IMAGES.rey;
+        }
+
+        function updateEggSlots() {
+            eggSlots.forEach((slot, i) => slot.classList.toggle('filled', i < eggsCount));
+        }
+
+        function spawnCoins(count, targetIndex) {
+            const originX = targetIndex === undefined ? scene.getBoundingClientRect().width / 2 : getTowerCenterX(targetIndex);
+            const originY = 65;
+            for (let i = 0; i < count; i++) {
+                const el = document.createElement('div');
+                el.className = 'coin-particle';
+                el.innerHTML = '<img src="/static/images/characters/bird_blast_moneda.png" alt="">';
+                scene.appendChild(el);
+                const angle = (Math.PI * 2 * i) / count + Math.random() * 0.5;
+                const dist = 50 + Math.random() * 55;
+                const dx = Math.cos(angle) * dist;
+                const dy = Math.sin(angle) * dist * 0.7 - 20;
+                el.style.transform = `translate(${originX - 13}px, ${originY - 13}px)`;
+                requestAnimationFrame(() => {
+                    el.style.transition = 'transform 0.7s cubic-bezier(0.2,0.8,0.3,1), opacity 0.7s ease';
+                    el.style.transform = `translate(${originX - 13 + dx}px, ${originY - 13 + dy}px) rotate(${360 + Math.random()*180}deg)`;
+                    el.style.opacity = '0';
+                });
+                setTimeout(() => el.remove(), 750);
+            }
+        }
+
+        function getTowerCenterX(index) {
+            const sceneRect = scene.getBoundingClientRect();
+            const tRect = towerEls[index].getBoundingClientRect();
+            return (tRect.left + tRect.width / 2) - sceneRect.left;
+        }
+
+        async function animateThrow(birdKey) {
+            const targetIndex = BIRD_TOWER_INDEX[birdKey] ?? 1;
+            catapultWrap.style.setProperty('--aim', (AIM_DEG[targetIndex] ?? 0) + 'deg');
+
+            setBird(birdKey);
+            trajectoryLine.classList.add('show');
+            await sleep(350);
+            trajectoryLine.classList.remove('show');
+
+            catapultWrap.classList.remove('swing');
+            void catapultWrap.offsetWidth;
+            catapultWrap.classList.add('swing');
+            birdSlot.style.opacity = '0';
+            playLaunchSound();
+
+            const rect = scene.getBoundingClientRect();
+            const flyer = document.createElement('div');
+            flyer.className = 'flying-bird';
+            flyer.innerHTML = `<img src="${BIRD_IMAGES[birdKey] || BIRD_IMAGES.rey}" alt="">`;
+            scene.appendChild(flyer);
+
+            const targetX = getTowerCenterX(targetIndex);
+            const startX = rect.width / 2 - 29;
+            const startY = rect.height - 55;
+            const midX = (rect.width / 2 + targetX) / 2 - 29;
+            const midY = startY - 130;
+            const endX = targetX - 29;
+            const endY = 65;
+            const DURATION = 420;
+
+            // Transición CSS en dos tramos (subida con arco + caída sobre la torre) en vez de un
+            // bucle manual con requestAnimationFrame: rAF puede quedar suspendido indefinidamente
+            // si la pestaña no está en primer plano, lo que dejaría colgada la actualización del
+            // estado del juego (multiplicador, botón cobrar, etc.) esperando una promesa que nunca
+            // se resuelve. Con transition + setTimeout, la lógica del juego avanza siempre a tiempo.
+            flyer.style.transition = 'none';
+            flyer.style.transform = `translate(${startX}px, ${startY}px) rotate(0deg)`;
+            void flyer.offsetWidth;
+            flyer.style.transition = `transform ${DURATION * 0.55}ms ease-out`;
+            flyer.style.transform = `translate(${midX}px, ${midY}px) rotate(170deg)`;
+
+            await sleep(DURATION * 0.55);
+            flyer.style.transition = `transform ${DURATION * 0.45}ms ease-in`;
+            flyer.style.transform = `translate(${endX}px, ${endY}px) rotate(340deg)`;
+
+            await sleep(DURATION * 0.45 + 20);
+            flyer.remove();
+            playImpactSound();
+
+            return targetIndex;
+        }
+
+        function showTowerHit(outcome, targetIndex) {
+            towerEls.forEach(t => t.classList.remove('hit', 'resist'));
+            const tower = towerEls[targetIndex];
+            void tower.offsetWidth;
+            tower.classList.add('hit');
+
+            const targetX = getTowerCenterX(targetIndex);
+            impactImg.src = BLOCK_IMAGES[outcome] || BLOCK_IMAGES.comun;
+            impactPopup.style.left = targetX + 'px';
+            impactPopup.classList.remove('show');
+            void impactPopup.offsetWidth;
+            impactPopup.classList.add('show');
+        }
+
+        function showTowerResist(targetIndex) {
+            towerEls.forEach(t => t.classList.remove('hit', 'resist'));
+            towerEls[targetIndex].classList.add('resist');
+        }
+
+        function showMultFloat(text, targetIndex) {
+            multFloat.textContent = text;
+            multFloat.style.left = getTowerCenterX(targetIndex) + 'px';
+            multFloat.classList.remove('show');
+            void multFloat.offsetWidth;
+            multFloat.classList.add('show');
+        }
+
+        function showBonusBanner() {
+            bonusBanner.classList.add('show');
+            setTimeout(() => bonusBanner.classList.remove('show'), 1600);
+        }
+
+        function resetRoundUI() {
+            roundId = null;
+            hits = 0;
+            eggsCount = 0;
+            updateEggSlots();
+            document.getElementById('currentMultiplier').textContent = '1.00';
+            document.getElementById('potentialPayout').textContent = '0.00';
+            document.getElementById('cobrarBtn').classList.remove('enabled');
+            document.getElementById('betMinus').disabled = false;
+            document.getElementById('betPlus').disabled = false;
+            birdSlot.style.opacity = '1';
+            setBird('rey');
+        }
+
+        async function lanzar() {
+            if (busy) return;
+            busy = true;
+            getCtx();
+            const lanzarBtn = document.getElementById('lanzarBtn');
+            const resultMsg = document.getElementById('resultMsg');
+            lanzarBtn.disabled = true;
+
+            try {
+                if (!roundId) {
+                    const startRes = await fetch('/api/games/play_golden_sling_rush/', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken() },
+                        body: JSON.stringify({ bet_amount: betAmount })
+                    });
+                    const startData = await startRes.json();
+                    if (!startRes.ok) {
+                        resultMsg.textContent = startData.error || 'Error al apostar';
+                        resultMsg.className = 'result-msg loss';
+                        lanzarBtn.disabled = false;
+                        busy = false;
+                        return;
+                    }
+                    roundId = startData.round_id;
+                    document.getElementById('wallet').textContent = parseFloat(startData.balance).toFixed(2);
+                    document.getElementById('betMinus').disabled = true;
+                    document.getElementById('betPlus').disabled = true;
+                }
+
+                const response = await fetch('/api/games/play_golden_sling_rush/', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken() },
+                    body: JSON.stringify({ round_id: roundId })
+                });
+                const data = await response.json();
+
+                if (!response.ok) {
+                    resultMsg.textContent = data.error || 'Error al lanzar';
+                    resultMsg.className = 'result-msg loss';
+                    lanzarBtn.disabled = false;
+                    busy = false;
+                    return;
+                }
+
+                const gr = data.game_result;
+                document.getElementById('wallet').textContent = parseFloat(data.balance).toFixed(2);
+
+                // El pájaro que se lanza es siempre el que estaba en la primera bolita de
+                // PRÓXIMOS (predicción real, no cosmética): se consume de la cola recién
+                // después de la animación, para que coincida con lo que el jugador vio venir.
+                const birdToThrow = proximosQueue[0];
+                const targetIndex = await animateThrow(birdToThrow);
+                rotateProximos();
+
+                if (data.status === 'loss') {
+                    showTowerResist(targetIndex);
+                    playTrapSound();
+                    resultMsg.textContent = 'La torre resistió. La ronda terminó.';
+                    resultMsg.className = 'result-msg loss';
+                    resetRoundUI();
+                    lanzarBtn.disabled = false;
+                    busy = false;
+                    return;
+                }
+
+                hits += 1;
+                birdSlot.style.opacity = '1';
+                showTowerHit(gr.outcome, targetIndex);
+                document.getElementById('currentMultiplier').textContent = gr.multiplier.toFixed(2);
+                document.getElementById('potentialPayout').textContent = gr.potential_payout.toFixed(2);
+                document.getElementById('cobrarBtn').classList.add('enabled');
+                showMultFloat('x' + gr.multiplier.toFixed(2), targetIndex);
+                spawnCoins(gr.outcome === 'corona' ? 14 : (gr.outcome === 'dorado' || gr.outcome === 'cofre' ? 10 : 6), targetIndex);
+
+                if (gr.outcome === 'cofre' && eggsCount < 3) {
+                    eggsCount += 1;
+                    updateEggSlots();
+                    playEggSound();
+                }
+
+                if (gr.outcome === 'corona') {
+                    playCoronaSound();
+                    resultMsg.textContent = '¡Golpe perfecto! ' + OUTCOME_LABEL[gr.outcome] + ' Tu premio sube.';
+                    resultMsg.className = 'result-msg gold';
+                } else if (gr.outcome === 'dorado') {
+                    playGoldSound();
+                    resultMsg.textContent = '¡Golpe perfecto! Rompiste ' + OUTCOME_LABEL[gr.outcome] + '. Tu premio sube.';
+                    resultMsg.className = 'result-msg gold';
+                } else {
+                    playWinSound();
+                    resultMsg.textContent = '¡Golpe perfecto! Rompiste ' + OUTCOME_LABEL[gr.outcome] + '. Tu premio sube.';
+                    resultMsg.className = 'result-msg win';
+                }
+
+                if (gr.bonus_triggered) {
+                    eggsCount = 3;
+                    updateEggSlots();
+                    await sleep(300);
+                    showBonusBanner();
+                    playBonusSound();
+                    resultMsg.textContent = '¡Huevo dorado activado! Entrás al bonus Nido Dorado.';
+                    resultMsg.className = 'result-msg bonus';
+                    await sleep(400);
+                    eggsCount = 0;
+                    updateEggSlots();
+                }
+
+                lanzarBtn.disabled = false;
+                busy = false;
+            } catch (e) {
+                resultMsg.textContent = 'Error de conexión';
+                resultMsg.className = 'result-msg loss';
+                lanzarBtn.disabled = false;
+                busy = false;
+            }
+        }
+
+        async function cobrar() {
+            if (busy || !roundId) return;
+            busy = true;
+            const resultMsg = document.getElementById('resultMsg');
+            const cobrarBtn = document.getElementById('cobrarBtn');
+            cobrarBtn.classList.remove('enabled');
+
+            try {
+                const response = await fetch('/api/games/cashout_golden_sling_rush/', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken() },
+                    body: JSON.stringify({ round_id: roundId })
+                });
+                const data = await response.json();
+
+                if (!response.ok) {
+                    resultMsg.textContent = data.error || 'Error al retirar';
+                    resultMsg.className = 'result-msg loss';
+                    cobrarBtn.classList.add('enabled');
+                    busy = false;
+                    return;
+                }
+
+                const gr = data.game_result;
+                document.getElementById('wallet').textContent = parseFloat(data.balance).toFixed(2);
+                resultMsg.textContent = `¡Premio asegurado! Ganaste $${gr.payout.toFixed(2)}.`;
+                resultMsg.className = 'result-msg win';
+                playCashoutSound();
+                resetRoundUI();
+                busy = false;
+            } catch (e) {
+                resultMsg.textContent = 'Error de conexión';
+                resultMsg.className = 'result-msg loss';
+                cobrarBtn.classList.add('enabled');
+                busy = false;
+            }
+        }
+
+        document.getElementById('soundBtn').textContent = muted ? '🔇' : '🔊';
+        renderProximos();
+        loadBalance();
+    </script>
+</body>
+</html>

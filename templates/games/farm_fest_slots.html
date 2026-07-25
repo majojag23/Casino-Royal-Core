@@ -1,0 +1,650 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <title>Farm Fest Slots - Royal Casino Core</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Roboto, Tahoma, sans-serif;
+            background: #0E000E;
+            min-height: 100vh;
+            color: #fff;
+            overflow-x: hidden;
+        }
+        .screen {
+            max-width: 480px;
+            width: 100%;
+            margin: 0 auto;
+            min-height: 100vh;
+            padding-bottom: 100px;
+            position: relative;
+            overflow-x: hidden;
+            background: linear-gradient(180deg, rgba(14,0,14,0.05) 0%, rgba(14,0,14,0.25) 55%, rgba(14,0,14,0.6) 100%),
+                        url('/static/images/characters/farm_background.png');
+            background-size: auto, cover;
+            background-position: center, center top;
+            background-repeat: no-repeat;
+        }
+        .top-row { display: flex; align-items: center; justify-content: space-between; padding: 14px 16px 0; }
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            color: #cfcbe8;
+            text-decoration: none;
+            font-size: 0.85rem;
+        }
+        .sound-btn {
+            width: 34px; height: 34px;
+            border-radius: 50%;
+            border: 1px solid #46407C;
+            background: rgba(255,255,255,0.06);
+            color: #fff;
+            font-size: 1rem;
+            cursor: pointer;
+        }
+        .title-row {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 8px 0 12px;
+        }
+        .title-row img { height: 76px; width: auto; filter: drop-shadow(0 4px 10px rgba(0,0,0,0.5)); }
+
+        .chips-row { display: flex; justify-content: space-between; gap: 8px; padding: 0 16px; margin-bottom: 14px; flex-wrap: wrap; align-items: center; }
+        .chip-billetera {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: #000114;
+            border: 1px solid #41DBFD;
+            border-radius: 8px;
+            padding: 6px 10px;
+            font-size: 0.72rem;
+            font-weight: 700;
+            white-space: nowrap;
+        }
+        .chip-billetera .icon-badge { width: 18px; height: 18px; flex-shrink: 0; }
+        .chip-apuesta {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: #351C07;
+            border: 2px solid #A56218;
+            border-radius: 24px;
+            padding: 5px 12px 5px 6px;
+            font-size: 0.72rem;
+            font-weight: 700;
+            white-space: nowrap;
+        }
+        .chip-apuesta .icon-badge {
+            width: 22px; height: 22px; flex-shrink: 0;
+            border-radius: 6px;
+            border: 2px solid #C47B20;
+            background: linear-gradient(180deg, #FFD36E, #E08A00);
+            display: flex; align-items: center; justify-content: center;
+        }
+        .chip.free {
+            display: none;
+            background: rgba(255,255,255,0.06);
+            border: 1px solid #01F9BE;
+            border-radius: 14px;
+            padding: 6px 12px;
+            font-size: 0.72rem;
+            font-weight: 700;
+            color: #01F9BE;
+            white-space: nowrap;
+        }
+        .chip.free.show { display: inline-flex; animation: farm-pulse 0.8s ease-in-out infinite alternate; }
+
+        .game-area { padding: 0 8px; text-align: center; position: relative; }
+
+        .mascot-wrap {
+            position: relative;
+            z-index: 0;
+            width: 100%;
+            max-width: 464px;
+            aspect-ratio: 464 / 155;
+            margin: 0 auto;
+            margin-bottom: -9.5%;
+            overflow: hidden;
+            pointer-events: none;
+        }
+        .mascot-wrap img {
+            width: 100%;
+            height: auto;
+            display: block;
+            filter: drop-shadow(0 6px 10px rgba(0,0,0,0.5));
+        }
+
+        .machine {
+            width: 100%;
+            max-width: 464px;
+            aspect-ratio: 1099 / 915;
+            margin: 0 auto;
+            background-image: url('/static/images/icons/farm_reel_frame.png');
+            background-size: 100% 100%;
+            background-repeat: no-repeat;
+            padding: 12.5% 11.64% 9.27%;
+            position: relative;
+            z-index: 1;
+        }
+
+        .grid-wrap { position: relative; height: 100%; }
+        .reels-wrap {
+            display: flex;
+            gap: 1.1%;
+            height: 100%;
+        }
+        .reel-col {
+            flex: 1;
+            height: 100%;
+            overflow: hidden;
+            border-radius: 6px;
+            background: rgba(0,0,0,0.5);
+            position: relative;
+        }
+        .reel-col.anticipating {
+            border-color: #FFD36E;
+            animation: anticipation-glow 0.4s ease-in-out infinite alternate;
+        }
+        @keyframes anticipation-glow {
+            from { box-shadow: inset 0 0 10px rgba(255,211,110,0.3); }
+            to { box-shadow: inset 0 0 22px rgba(255,211,110,0.9), 0 0 14px rgba(255,211,110,0.6); }
+        }
+        .reel-strip { display: flex; flex-direction: column; will-change: transform; }
+        .sym-cell {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1px;
+            position: relative;
+            flex-shrink: 0;
+        }
+        .sym-cell img { width: 100%; height: 100%; object-fit: contain; }
+        .sym-cell.winning::after {
+            content: '';
+            position: absolute; inset: 2px;
+            border-radius: 6px;
+            box-shadow: 0 0 12px 4px rgba(1,249,190,0.9);
+            animation: farm-pulse 0.8s ease-in-out infinite alternate;
+        }
+
+        @keyframes farm-pulse {
+            from { box-shadow: 0 0 8px 2px rgba(1,249,190,0.6); }
+            to { box-shadow: 0 0 22px 8px rgba(1,249,190,1); }
+        }
+
+        .scatter-banner, .freespins-banner {
+            display: none;
+            margin-top: 14px;
+            padding: 12px;
+            border-radius: 14px;
+            font-weight: 800;
+            font-style: italic;
+            text-align: center;
+        }
+        .scatter-banner {
+            border: 2px solid #FFD36E;
+            background: rgba(255,211,110,0.12);
+            box-shadow: 0 0 20px rgba(255,211,110,0.5);
+            color: #FFD36E;
+        }
+        .freespins-banner {
+            border: 2px solid #01F9BE;
+            background: rgba(1,249,190,0.12);
+            box-shadow: 0 0 20px rgba(1,249,190,0.5);
+            color: #01F9BE;
+        }
+        .scatter-banner.show, .freespins-banner.show { display: block; animation: farm-pulse 0.8s ease-in-out infinite alternate; }
+
+        .bet-row {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin: 16px 0;
+        }
+        .bet-btn {
+            width: 34px; height: 34px;
+            border-radius: 50%;
+            border: 1px solid #46407C;
+            background: rgba(255,255,255,0.06);
+            color: #fff;
+            font-size: 1.1rem;
+            cursor: pointer;
+        }
+        .bet-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+        .bet-amount { font-size: 1.1rem; font-weight: 800; min-width: 60px; }
+
+        .spin-btn {
+            width: clamp(84px, 26vw, 120px);
+            height: clamp(84px, 26vw, 120px);
+            margin: 16px auto 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: none;
+            border-radius: 50%;
+            background: url('/static/images/icons/farm_spin_button.png') center / contain no-repeat;
+            cursor: pointer;
+            filter: drop-shadow(0 6px 14px rgba(47,168,79,0.5));
+            position: relative;
+        }
+        .spin-btn-label {
+            font-weight: 800;
+            font-size: 0.72rem;
+            color: #01F9BE;
+            text-align: center;
+            background: rgba(0,0,0,0.6);
+            border-radius: 50%;
+            width: 100%;
+            height: 100%;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 0 10px;
+        }
+        .spin-btn.free-mode .spin-btn-label { display: flex; }
+        .spin-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+        .result-msg { margin-top: 14px; font-size: 0.9rem; font-weight: 700; min-height: 20px; }
+        .result-msg.win { color: #01F9BE; }
+        .result-msg.loss { color: #ffb066; }
+
+        .bottom-nav {
+            position: fixed;
+            bottom: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: calc(100% - 32px);
+            max-width: 448px;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            padding: 8px 6px;
+            background: #0D072C;
+            border: 1px solid #72378B;
+            border-radius: 24px;
+        }
+        .nav-item { display: flex; align-items: center; justify-content: center; flex: 1; }
+        .nav-item img { height: 40px; width: auto; filter: grayscale(1) brightness(1.6) opacity(0.55); }
+    </style>
+</head>
+<body>
+    {% csrf_token %}
+    <div class="screen">
+        <div class="top-row">
+            <a href="/lobby/" class="back-link">‹ Volver al lobby</a>
+            <button class="sound-btn" id="soundBtn" onclick="toggleSound()">🔊</button>
+        </div>
+        <div class="title-row">
+            <img src="/static/images/icons/farm_fest_title.png" alt="Farm Fest Slots">
+        </div>
+
+        <div class="chips-row">
+            <span class="chip-billetera">
+                <svg class="icon-badge" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <rect x="2" y="6" width="20" height="14" rx="2.5" stroke="#41DBFD" stroke-width="1.8"/>
+                    <path d="M2 10h20" stroke="#41DBFD" stroke-width="1.8"/>
+                    <circle cx="17" cy="15" r="1.6" fill="#41DBFD"/>
+                </svg>
+                BILLETERA: $<span id="wallet">0.00</span>
+            </span>
+            <span class="chip-apuesta">
+                <span class="icon-badge">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <circle cx="12" cy="12" r="8" stroke="#401E00" stroke-width="2"/>
+                        <circle cx="12" cy="12" r="3.5" fill="#401E00"/>
+                    </svg>
+                </span>
+                APUESTA: $<span id="betDisplay">1.00</span>
+            </span>
+            <span class="chip free" id="freeSpinsChip">GIROS GRATIS: <span id="freeSpinsCount">0</span></span>
+        </div>
+
+        <div class="game-area">
+            <div class="mascot-wrap">
+                <img src="/static/images/characters/farm_personajes.png" alt="">
+            </div>
+            <div class="machine">
+                <div class="grid-wrap">
+                    <div class="reels-wrap" id="reelsWrap">
+                        <div class="reel-col" id="reel-col-0"><div class="reel-strip" id="strip-0"></div></div>
+                        <div class="reel-col" id="reel-col-1"><div class="reel-strip" id="strip-1"></div></div>
+                        <div class="reel-col" id="reel-col-2"><div class="reel-strip" id="strip-2"></div></div>
+                        <div class="reel-col" id="reel-col-3"><div class="reel-strip" id="strip-3"></div></div>
+                        <div class="reel-col" id="reel-col-4"><div class="reel-strip" id="strip-4"></div></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="scatter-banner" id="scatterBanner">¡BONO SCATTER! 3+ scatters activan el bono</div>
+            <div class="freespins-banner" id="freeSpinsBanner">¡GANASTE 10 GIROS GRATIS!</div>
+
+            <button class="spin-btn" id="spinBtn" onclick="spin()">
+                <span class="spin-btn-label" id="spinBtnLabel"></span>
+            </button>
+
+            <div class="bet-row">
+                <button class="bet-btn" id="betMinus" onclick="changeBet(-1)">-</button>
+                <span class="bet-amount">$<span id="betAmount">1</span></span>
+                <button class="bet-btn" id="betPlus" onclick="changeBet(1)">+</button>
+            </div>
+
+            <div class="result-msg" id="resultMsg"></div>
+        </div>
+    </div>
+
+    <div class="bottom-nav">
+        <a href="/lobby/" class="nav-item"><img src="/static/images/icons/nav_lobby.png" alt="Lobby"></a>
+        <a href="/promos/" class="nav-item"><img src="/static/images/icons/nav_promos.png" alt="Promos"></a>
+        <a href="/vip/" class="nav-item"><img src="/static/images/icons/nav_vip.png" alt="VIP"></a>
+        <a href="/profile/" class="nav-item"><img src="/static/images/icons/nav_perfil.png" alt="Perfil"></a>
+    </div>
+
+    <script>
+        let betAmount = 1;
+        let spinning = false;
+        let freeSpinsRemaining = 0;
+
+        const SYMBOL_IMAGES = {
+            cabbage: '/static/images/symbols/sym_farm_cabbage.png?v=2',
+            corn: '/static/images/symbols/sym_farm_corn.png?v=2',
+            tomato: '/static/images/symbols/sym_farm_tomato.png?v=2',
+            pepper: '/static/images/symbols/sym_farm_pepper.png?v=2',
+            eggplant: '/static/images/symbols/sym_farm_eggplant.png?v=2',
+            carrot: '/static/images/symbols/sym_farm_carrot.png?v=2',
+            chicken: '/static/images/symbols/sym_farm_chicken.png?v=2',
+            sheep: '/static/images/symbols/sym_farm_sheep.png?v=2',
+            pig: '/static/images/symbols/sym_farm_pig.png?v=2',
+            farmer: '/static/images/symbols/sym_farm_farmer.png?v=2',
+            wild: '/static/images/symbols/sym_farm_wild.png?v=2',
+            scatter: '/static/images/symbols/sym_farm_scatter.png?v=2'
+        };
+        const SYMBOL_KEYS = Object.keys(SYMBOL_IMAGES);
+        const COLS = 5, ROWS = 3;
+
+        const INITIAL_GRID = [
+            ['cabbage', 'corn', 'tomato', 'pepper', 'eggplant'],
+            ['carrot', 'chicken', 'sheep', 'pig', 'farmer'],
+            ['wild', 'cabbage', 'corn', 'tomato', 'scatter']
+        ];
+
+        let CELL_HEIGHT = 95;
+        const FILLER_COUNT = 14;
+        const REEL_DURATIONS = [700, 950, 1200, 1450, 1700];
+        const ANTICIPATION_EXTRA = 450;
+
+        /* ---------- Sonido (Web Audio API, sintetizado, sin archivos externos) ---------- */
+        let audioCtx = null;
+        let muted = localStorage.getItem('farmFestMuted') === '1';
+        let spinSoundInterval = null;
+
+        function getCtx() {
+            if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            return audioCtx;
+        }
+
+        function beep(freq, duration, type, gainValue, delay) {
+            if (muted) return;
+            const ctx = getCtx();
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.type = type || 'sine';
+            osc.frequency.value = freq;
+            gain.gain.value = gainValue || 0.15;
+            osc.connect(gain).connect(ctx.destination);
+            const startTime = ctx.currentTime + (delay || 0);
+            osc.start(startTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, startTime + duration);
+            osc.stop(startTime + duration + 0.02);
+        }
+
+        function playSpinLoop() {
+            if (muted) return;
+            spinSoundInterval = setInterval(() => beep(220, 0.05, 'square', 0.05), 90);
+        }
+        function stopSpinLoop() {
+            clearInterval(spinSoundInterval);
+        }
+        function playReelStop() {
+            beep(440, 0.08, 'triangle', 0.2);
+        }
+        function playWinSound() {
+            [523.25, 659.25, 783.99].forEach((f, i) => beep(f, 0.25, 'sine', 0.2, i * 0.12));
+        }
+        function playFreeSpinsSound() {
+            [392, 523.25, 659.25].forEach((f, i) => beep(f, 0.3, 'triangle', 0.2, i * 0.14));
+        }
+        function playLossSound() {
+            beep(150, 0.3, 'sine', 0.12, 0);
+        }
+        function playAnticipationSound() {
+            if (muted) return;
+            const ctx = getCtx();
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.type = 'sawtooth';
+            gain.gain.value = 0.08;
+            osc.frequency.setValueAtTime(200, ctx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(500, ctx.currentTime + ANTICIPATION_EXTRA / 1000);
+            osc.connect(gain).connect(ctx.destination);
+            osc.start();
+            osc.stop(ctx.currentTime + ANTICIPATION_EXTRA / 1000 + 0.05);
+        }
+
+        function toggleSound() {
+            muted = !muted;
+            localStorage.setItem('farmFestMuted', muted ? '1' : '0');
+            document.getElementById('soundBtn').textContent = muted ? '🔇' : '🔊';
+        }
+
+        function measureCellHeight() {
+            const col = document.getElementById('reel-col-0');
+            const h = col.getBoundingClientRect().height;
+            if (h > 0) CELL_HEIGHT = h / ROWS;
+        }
+
+        function randomSymbol() {
+            return SYMBOL_KEYS[Math.floor(Math.random() * SYMBOL_KEYS.length)];
+        }
+
+        function buildStrip(colIndex, finalColSymbols, fillerCount = FILLER_COUNT) {
+            const strip = document.getElementById(`strip-${colIndex}`);
+            strip.style.transition = 'none';
+            strip.innerHTML = '';
+
+            const sequence = [...finalColSymbols];
+            for (let i = 0; i < fillerCount; i++) sequence.push(randomSymbol());
+
+            sequence.forEach(sym => {
+                const cell = document.createElement('div');
+                cell.className = 'sym-cell';
+                cell.style.height = `${CELL_HEIGHT}px`;
+                cell.innerHTML = `<img src="${SYMBOL_IMAGES[sym]}" alt="${sym}">`;
+                strip.appendChild(cell);
+            });
+
+            strip.style.transform = `translateY(-${fillerCount * CELL_HEIGHT}px)`;
+            return sequence.length;
+        }
+
+        function animateReel(colIndex, duration) {
+            const strip = document.getElementById(`strip-${colIndex}`);
+            void strip.offsetHeight;
+            strip.style.transition = `transform ${duration}ms cubic-bezier(0.17, 1.15, 0.4, 1)`;
+            strip.style.transform = 'translateY(0)';
+        }
+
+        function renderStatic(grid) {
+            for (let c = 0; c < COLS; c++) {
+                buildStrip(c, [grid[0][c], grid[1][c], grid[2][c]], 0);
+            }
+        }
+
+        function clearWinningCells() {
+            document.querySelectorAll('.sym-cell.winning').forEach(el => el.classList.remove('winning'));
+        }
+
+        function highlightWinningLines(winningLines) {
+            clearWinningCells();
+            (winningLines || []).forEach(line => {
+                line.cells.forEach(([r, c]) => {
+                    const strip = document.getElementById(`strip-${c}`);
+                    const cell = strip.children[r];
+                    if (cell) cell.classList.add('winning');
+                });
+            });
+        }
+
+        function updateBetControls() {
+            const isFree = freeSpinsRemaining > 0;
+            document.getElementById('betMinus').disabled = isFree;
+            document.getElementById('betPlus').disabled = isFree;
+            const spinBtn = document.getElementById('spinBtn');
+            document.getElementById('spinBtnLabel').textContent = isFree ? `GIRO GRATIS (${freeSpinsRemaining})` : '';
+            spinBtn.classList.toggle('free-mode', isFree);
+            const chip = document.getElementById('freeSpinsChip');
+            chip.classList.toggle('show', isFree);
+            document.getElementById('freeSpinsCount').textContent = freeSpinsRemaining;
+        }
+
+        function changeBet(delta) {
+            if (freeSpinsRemaining > 0) return;
+            betAmount = Math.max(1, betAmount + delta);
+            document.getElementById('betAmount').textContent = betAmount;
+            document.getElementById('betDisplay').textContent = betAmount.toFixed(2);
+        }
+
+        async function loadBalance() {
+            try {
+                const res = await fetch('/api/users/profile/');
+                if (res.ok) {
+                    const data = await res.json();
+                    document.getElementById('wallet').textContent = parseFloat(data.balance).toFixed(2);
+                }
+            } catch (e) {}
+        }
+
+        async function loadFreeSpins() {
+            try {
+                const res = await fetch('/api/games/farm_fest_free_spins/');
+                if (res.ok) {
+                    const data = await res.json();
+                    freeSpinsRemaining = data.free_spins_remaining || 0;
+                    updateBetControls();
+                }
+            } catch (e) {}
+        }
+
+        async function spin() {
+            if (spinning) return;
+            spinning = true;
+            getCtx();
+
+            const btn = document.getElementById('spinBtn');
+            const resultMsg = document.getElementById('resultMsg');
+            const scatterBanner = document.getElementById('scatterBanner');
+            const freeSpinsBanner = document.getElementById('freeSpinsBanner');
+            btn.disabled = true;
+            resultMsg.textContent = '';
+            scatterBanner.classList.remove('show');
+            freeSpinsBanner.classList.remove('show');
+            clearWinningCells();
+            playSpinLoop();
+
+            try {
+                const token = document.querySelector('[name="csrfmiddlewaretoken"]')?.value || '';
+                const response = await fetch('/api/games/play_farm_fest/', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRFToken': token },
+                    body: JSON.stringify({ bet_amount: betAmount })
+                });
+                const data = await response.json();
+
+                if (!response.ok) {
+                    stopSpinLoop();
+                    resultMsg.textContent = data.error || 'Error al girar';
+                    resultMsg.className = 'result-msg loss';
+                    btn.disabled = false;
+                    spinning = false;
+                    return;
+                }
+
+                const gr = data.game_result;
+                const hasWin = gr.winning_lines && gr.winning_lines.length > 0;
+                const durations = REEL_DURATIONS.map((d, i) => i === COLS - 1 && hasWin ? d + ANTICIPATION_EXTRA : d);
+                const lastReelCol = document.getElementById(`reel-col-${COLS - 1}`);
+
+                for (let c = 0; c < COLS; c++) {
+                    buildStrip(c, [gr.grid[0][c], gr.grid[1][c], gr.grid[2][c]]);
+                    requestAnimationFrame(() => animateReel(c, durations[c]));
+                    setTimeout(playReelStop, durations[c]);
+                }
+
+                if (hasWin) {
+                    setTimeout(() => {
+                        lastReelCol.classList.add('anticipating');
+                        playAnticipationSound();
+                    }, durations[COLS - 2]);
+                    setTimeout(() => lastReelCol.classList.remove('anticipating'), durations[COLS - 1]);
+                }
+
+                setTimeout(() => {
+                    stopSpinLoop();
+                    highlightWinningLines(gr.winning_lines);
+                    document.getElementById('wallet').textContent = parseFloat(data.balance).toFixed(2);
+                    freeSpinsRemaining = data.free_spins_remaining || 0;
+                    updateBetControls();
+
+                    if (data.free_spins_awarded > 0) {
+                        scatterBanner.classList.add('show');
+                        freeSpinsBanner.classList.add('show');
+                        playFreeSpinsSound();
+                    }
+
+                    if (data.status === 'win') {
+                        resultMsg.textContent = `¡Ganaste $${gr.payout.toFixed(2)}!`;
+                        resultMsg.className = 'result-msg win';
+                        playWinSound();
+                    } else {
+                        resultMsg.textContent = data.is_free_spin ? 'Sin suerte en este giro gratis, ¡sigue jugando!' : 'Sin suerte esta vez, ¡vuelve a intentar!';
+                        resultMsg.className = 'result-msg loss';
+                        playLossSound();
+                    }
+
+                    btn.disabled = false;
+                    spinning = false;
+                }, durations[COLS - 1] + 80);
+            } catch (e) {
+                stopSpinLoop();
+                btn.disabled = false;
+                spinning = false;
+                resultMsg.textContent = 'Error de conexión';
+                resultMsg.className = 'result-msg loss';
+            }
+        }
+
+        document.getElementById('soundBtn').textContent = muted ? '🔇' : '🔊';
+        measureCellHeight();
+        renderStatic(INITIAL_GRID);
+        loadBalance();
+        loadFreeSpins();
+
+        let resizeTimer = null;
+        window.addEventListener('resize', () => {
+            clearTimeout(resizeTimer);
+            resizeTimer = setTimeout(() => {
+                if (spinning) return;
+                measureCellHeight();
+                renderStatic(INITIAL_GRID);
+            }, 150);
+        });
+    </script>
+</body>
+</html>

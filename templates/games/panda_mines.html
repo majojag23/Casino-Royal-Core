@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <title>Panda Cyber-Mines - Royal Casino Core</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Roboto, Tahoma, sans-serif;
+            background: #1a0a1e;
+            min-height: 100vh;
+            color: #fff;
+        }
+        .screen {
+            max-width: 480px; margin: 0 auto; min-height: 100vh; padding-bottom: 100px;
+            position: relative;
+            background: linear-gradient(180deg, rgba(20,5,20,0.05) 0%, rgba(10,0,20,0.35) 55%, rgba(5,0,15,0.8) 100%),
+                        url('/static/images/mines/panda_mines_background.png?v=2');
+            background-size: cover;
+            background-position: center top;
+            background-repeat: no-repeat;
+        }
+        .back-link { display: inline-flex; align-items: center; gap: 6px; padding: 14px 16px; color: #cfcbe8; text-decoration: none; font-size: 0.85rem; }
+        .title-row {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 10px;
+        }
+        .title-row img { height: 92px; width: auto; filter: drop-shadow(0 6px 12px rgba(0,0,0,0.6)); }
+
+        .controls-row { display: flex; gap: 10px; padding: 0 16px; margin-bottom: 12px; }
+        .control-box {
+            flex: 1;
+            background: rgba(20,5,40,0.6);
+            border: 1px solid #46407C;
+            border-radius: 12px;
+            padding: 8px 10px;
+        }
+        .control-label { font-size: 0.62rem; color: #9c96c4; margin-bottom: 4px; }
+        .stepper { display: flex; align-items: center; justify-content: space-between; }
+        .stepper button { width: 24px; height: 24px; border-radius: 50%; border: 1px solid #46407C; background: rgba(255,255,255,0.06); color: #fff; cursor: pointer; }
+        .stepper button:disabled { opacity: 0.4; cursor: not-allowed; }
+        .stepper span { font-weight: 800; font-size: 0.95rem; }
+
+        .mines-select { display: flex; gap: 4px; }
+        .mine-opt {
+            flex: 1;
+            text-align: center;
+            padding: 4px 0;
+            border-radius: 8px;
+            font-size: 0.72rem;
+            font-weight: 700;
+            border: 1px solid #46407C;
+            background: rgba(255,255,255,0.04);
+            cursor: pointer;
+        }
+        .mine-opt.active { background: #F44CFC; border-color: #F44CFC; }
+        .mine-opt.locked { pointer-events: none; opacity: 0.5; }
+
+        .stats-row {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 8px 16px; margin-bottom: 10px; font-size: 0.72rem; font-weight: 700;
+        }
+        .stats-row .wallet { color: #fff; display: flex; align-items: center; gap: 4px; }
+        .stats-row .mult { color: #01F9BE; display: flex; align-items: center; gap: 4px; }
+        .stats-row img { width: 14px; height: 14px; }
+
+        .profit-row {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 8px 12px; margin: 0 16px 10px; font-size: 0.68rem; color: #cfcbe8;
+            background: rgba(20,5,40,0.5); border: 1px solid #46407C; border-radius: 10px;
+        }
+        .profit-row .profit-current b { color: #01F9BE; font-size: 0.85rem; }
+        .profit-row .profit-next b { color: #FFD36E; }
+
+        .grid-wrap { padding: 0 16px; }
+        .board-frame { position: relative; width: 100%; aspect-ratio: 1183 / 1173; }
+        .board-bg { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+        .grid {
+            position: absolute;
+            left: 9%; right: 11%; top: 17%; bottom: 5%;
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            grid-template-rows: repeat(5, 1fr);
+            column-gap: 2px;
+            row-gap: 1px;
+        }
+        .cell {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+        }
+        .cell img { width: 100%; height: 100%; object-fit: cover; }
+        .cell:hover { filter: brightness(1.15); }
+        .cell.disabled { pointer-events: none; }
+
+        .btn-row { display: flex; gap: 10px; width: calc(100% - 32px); margin: 14px 16px 0; }
+        .btn-iniciar, .btn-retiro {
+            flex: 1;
+            height: 56px;
+            border: none;
+            cursor: pointer;
+            appearance: none; -webkit-appearance: none;
+            background-color: transparent;
+            background-size: contain; background-position: center; background-repeat: no-repeat;
+            transition: transform 0.15s, opacity 0.2s;
+        }
+        .btn-iniciar { background-image: url('/static/images/characters/panda_mines_btn_iniciar.png'); }
+        .btn-retiro { background-image: url('/static/images/characters/panda_mines_btn_retiro.png'); opacity: 0.4; pointer-events: none; }
+        .btn-retiro.enabled { opacity: 1; pointer-events: auto; }
+        .btn-iniciar:disabled { opacity: 0.5; cursor: not-allowed; pointer-events: none; }
+        .btn-iniciar:active, .btn-retiro:active { transform: scale(0.96); }
+
+        .hint-text { text-align: center; font-size: 0.68rem; color: #9c96c4; margin: 10px 16px; }
+        .hint-text b { color: #F44CFC; }
+
+        .panda-wrap { display: flex; justify-content: center; margin-top: 6px; }
+        .panda-wrap img { width: 110px; }
+
+        .result-msg { text-align: center; font-size: 0.9rem; font-weight: 700; min-height: 20px; margin-top: 8px; padding: 0 16px; }
+        .result-msg.win { color: #01F9BE; }
+        .result-msg.loss { color: #ff9ad4; }
+
+        .bottom-nav {
+            position: fixed;
+            bottom: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: calc(100% - 32px);
+            max-width: 448px;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            padding: 8px 6px;
+            background: #0D072C;
+            border: 1px solid #72378B;
+            border-radius: 24px;
+        }
+        .nav-item {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex: 1;
+        }
+        .nav-item img { height: 40px; width: auto; }
+    </style>
+</head>
+<body>
+    {% csrf_token %}
+    <div class="screen">
+        <a href="/lobby/" class="back-link">‹ Volver al lobby</a>
+        <div class="title-row"><img src="/static/images/characters/panda_mines_title.png" alt="Panda Mines"></div>
+
+        <div class="controls-row">
+            <div class="control-box">
+                <div class="control-label">MONTO A JUGAR</div>
+                <div class="stepper">
+                    <button id="betMinus" onclick="changeBet(-1)">-</button>
+                    <span id="betAmount">20</span>
+                    <button id="betPlus" onclick="changeBet(1)">+</button>
+                </div>
+            </div>
+            <div class="control-box">
+                <div class="control-label">MINAS ACTIVAS</div>
+                <div class="mines-select" id="minesSelect">
+                    <div class="mine-opt" data-mines="1">1</div>
+                    <div class="mine-opt" data-mines="3">3</div>
+                    <div class="mine-opt active" data-mines="5">5</div>
+                    <div class="mine-opt" data-mines="7">7</div>
+                    <div class="mine-opt" data-mines="10">10</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="stats-row">
+            <span class="wallet"><img src="/static/images/icons/icon_wallet.png" alt="">BILLETERA: $<span id="wallet">50.00</span></span>
+            <span class="mult"><img src="/static/images/icons/icon_chip.png" alt="">MULT: <span id="multDisplay">1.00</span>x</span>
+        </div>
+
+        <div class="profit-row">
+            <span class="profit-current">GANANCIA ACTUAL: <b id="profitDisplay">$0.00</b></span>
+            <span class="profit-next">SIGUIENTE CASILLA: <b id="nextTileDisplay">--</b></span>
+        </div>
+
+        <div class="grid-wrap">
+            <div class="board-frame">
+                <img class="board-bg" src="/static/images/mines/board_panda.png" alt="">
+                <div class="grid" id="grid"></div>
+            </div>
+        </div>
+
+        <div class="btn-row">
+            <button class="btn-iniciar" id="iniciarBtn" onclick="startGame()"></button>
+            <button class="btn-retiro" id="retiroBtn" onclick="cashOut()"></button>
+        </div>
+        <div class="result-msg" id="resultMsg"></div>
+
+        <div class="hint-text">Encuentra los pandas dorados, evita las minas sorpresa y <b>aumenta el premio en cada jugada</b>.</div>
+
+        <div class="panda-wrap">
+            <img src="/static/images/characters/panda_mascot.png" alt="Panda">
+        </div>
+    </div>
+
+    <div class="bottom-nav">
+        <a href="/lobby/" class="nav-item"><img src="/static/images/icons/nav_lobby.png" alt="Lobby"></a>
+        <a href="/promos/" class="nav-item"><img src="/static/images/icons/nav_promos.png" alt="Promos"></a>
+        <a href="/vip/" class="nav-item"><img src="/static/images/icons/nav_vip.png" alt="VIP"></a>
+        <a href="/profile/" class="nav-item"><img src="/static/images/icons/nav_perfil.png" alt="Perfil"></a>
+    </div>
+
+    <script>
+        const CELL_LOCKED = '/static/images/mines/cell_locked.png?v=3';
+        const CELL_PANDA = '/static/images/mines/cell_panda.png?v=3';
+        const CELL_BOMB = '/static/images/mines/cell_bomb.png?v=3';
+        const CELL_DIAMOND = '/static/images/mines/cell_diamond.png?v=3';
+
+        let betAmount = 20;
+        let selectedMines = 5;
+        let gridId = null;
+        let gameActive = false;
+        let currentMultiplier = 1.0;
+
+        function csrfToken() {
+            return document.querySelector('[name="csrfmiddlewaretoken"]')?.value || '';
+        }
+
+        function updateButtons() {
+            const iniciarBtn = document.getElementById('iniciarBtn');
+            const retiroBtn = document.getElementById('retiroBtn');
+            iniciarBtn.disabled = gameActive;
+            if (!gameActive) {
+                retiroBtn.classList.remove('enabled');
+                return;
+            }
+            const profit = betAmount * currentMultiplier - betAmount;
+            retiroBtn.classList.toggle('enabled', profit > 0);
+        }
+
+        function updateProfitDisplays(nextMultiplier) {
+            const profit = betAmount * currentMultiplier - betAmount;
+            document.getElementById('profitDisplay').textContent = `$${Math.max(profit, 0).toFixed(2)}`;
+
+            const nextEl = document.getElementById('nextTileDisplay');
+            if (nextMultiplier === null || nextMultiplier === undefined) {
+                nextEl.textContent = '--';
+            } else {
+                const nextProfit = betAmount * nextMultiplier - betAmount;
+                nextEl.textContent = `$${nextProfit.toFixed(2)} (${nextMultiplier.toFixed(2)}x)`;
+            }
+        }
+
+        function changeBet(delta) {
+            if (gameActive) return;
+            betAmount = Math.max(1, betAmount + delta);
+            document.getElementById('betAmount').textContent = betAmount;
+        }
+
+        document.getElementById('minesSelect').addEventListener('click', (e) => {
+            if (gameActive) return;
+            if (e.target.classList.contains('mine-opt')) {
+                document.querySelectorAll('.mine-opt').forEach(el => el.classList.remove('active'));
+                e.target.classList.add('active');
+                selectedMines = parseInt(e.target.dataset.mines);
+            }
+        });
+
+        function buildGrid() {
+            const grid = document.getElementById('grid');
+            grid.innerHTML = '';
+            for (let i = 0; i < 25; i++) {
+                const cell = document.createElement('div');
+                cell.className = 'cell';
+                cell.innerHTML = `<img src="${CELL_LOCKED}" alt="">`;
+                cell.dataset.id = i;
+                cell.onclick = () => revealCell(i, cell);
+                grid.appendChild(cell);
+            }
+        }
+
+        function setControlsLocked(locked) {
+            document.getElementById('betMinus').disabled = locked;
+            document.getElementById('betPlus').disabled = locked;
+            document.querySelectorAll('.mine-opt').forEach(el => el.classList.toggle('locked', locked));
+        }
+
+        async function loadBalance() {
+            try {
+                const res = await fetch('/api/users/profile/');
+                if (res.ok) {
+                    const data = await res.json();
+                    document.getElementById('wallet').textContent = parseFloat(data.balance).toFixed(2);
+                }
+            } catch (e) {}
+        }
+
+        async function startGame() {
+            const response = await fetch('/api/games/play_panda_mines/', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken() },
+                body: JSON.stringify({ bet_amount: betAmount, mine_count: selectedMines })
+            });
+            const data = await response.json();
+            const resultMsg = document.getElementById('resultMsg');
+
+            if (!response.ok) {
+                resultMsg.textContent = data.error || 'Error al iniciar la partida';
+                resultMsg.className = 'result-msg loss';
+                return false;
+            }
+
+            gridId = data.grid_id;
+            gameActive = true;
+            currentMultiplier = 1.0;
+            document.getElementById('wallet').textContent = parseFloat(data.balance).toFixed(2);
+            document.getElementById('multDisplay').textContent = '1.00';
+            resultMsg.textContent = '';
+            setControlsLocked(true);
+            buildGrid();
+            updateButtons();
+            updateProfitDisplays(data.next_multiplier);
+            return true;
+        }
+
+        async function revealCell(cellId, cellEl) {
+            if (!gameActive) {
+                const started = await startGame();
+                if (!started) return;
+                cellEl = document.querySelector(`.cell[data-id="${cellId}"]`);
+            }
+            if (!cellEl || cellEl.classList.contains('disabled')) return;
+
+            const response = await fetch('/api/games/play_panda_mines/', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken() },
+                body: JSON.stringify({ grid_id: gridId, cell_id: cellId })
+            });
+            const data = await response.json();
+            const resultMsg = document.getElementById('resultMsg');
+
+            if (!response.ok) {
+                resultMsg.textContent = data.error || 'Error al revelar la celda';
+                resultMsg.className = 'result-msg loss';
+                return;
+            }
+
+            const gr = data.game_result;
+
+            if (data.status === 'loss') {
+                cellEl.innerHTML = `<img src="${CELL_BOMB}" alt="">`;
+                cellEl.classList.add('disabled');
+                (gr.mines || []).forEach(mineId => {
+                    if (mineId === cellId) return;
+                    const otherCell = document.querySelector(`.cell[data-id="${mineId}"]`);
+                    if (otherCell) otherCell.innerHTML = `<img src="${CELL_BOMB}" alt="">`;
+                });
+                document.querySelectorAll('.cell').forEach(c => c.classList.add('disabled'));
+                gameActive = false;
+                currentMultiplier = 1.0;
+                setControlsLocked(false);
+                updateButtons();
+                updateProfitDisplays(null);
+                resultMsg.textContent = '¡Encontraste una mina! Perdiste tu apuesta.';
+                resultMsg.className = 'result-msg loss';
+                setTimeout(buildGrid, 1200);
+                return;
+            }
+
+            cellEl.innerHTML = `<img src="${gr.is_diamond ? CELL_DIAMOND : CELL_PANDA}" alt="">`;
+            cellEl.classList.add('disabled');
+            currentMultiplier = gr.multiplier;
+            document.getElementById('multDisplay').textContent = gr.multiplier.toFixed(2);
+            document.getElementById('wallet').textContent = parseFloat(data.balance).toFixed(2);
+            updateButtons();
+            updateProfitDisplays(gr.next_multiplier);
+
+            if (data.status === 'win') {
+                document.querySelectorAll('.cell').forEach(c => c.classList.add('disabled'));
+                gameActive = false;
+                setControlsLocked(false);
+                updateButtons();
+                resultMsg.textContent = `¡Encontraste todos los pandas! Ganaste $${gr.payout.toFixed(2)} (${gr.multiplier.toFixed(2)}x)`;
+                resultMsg.className = 'result-msg win';
+                setTimeout(buildGrid, 1200);
+            } else if (gr.is_diamond) {
+                resultMsg.textContent = `¡Diamante! Se duplicó tu premio. Multiplicador actual: ${gr.multiplier.toFixed(2)}x`;
+                resultMsg.className = 'result-msg win';
+            } else {
+                resultMsg.textContent = `Multiplicador actual: ${gr.multiplier.toFixed(2)}x`;
+                resultMsg.className = 'result-msg win';
+            }
+        }
+
+        async function cashOut() {
+            if (!gameActive) return;
+            const response = await fetch('/api/games/cashout_panda_mines/', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken() },
+                body: JSON.stringify({ grid_id: gridId })
+            });
+            const data = await response.json();
+            const resultMsg = document.getElementById('resultMsg');
+
+            if (!response.ok) {
+                resultMsg.textContent = data.error || 'Error al retirar';
+                resultMsg.className = 'result-msg loss';
+                return;
+            }
+
+            document.querySelectorAll('.cell').forEach(c => c.classList.add('disabled'));
+            gameActive = false;
+            currentMultiplier = 1.0;
+            setControlsLocked(false);
+            updateButtons();
+            updateProfitDisplays(null);
+            document.getElementById('wallet').textContent = parseFloat(data.balance).toFixed(2);
+
+            const gr = data.game_result;
+            resultMsg.textContent = `¡Retiro asegurado! Ganaste $${gr.payout.toFixed(2)} (${gr.multiplier.toFixed(2)}x)`;
+            resultMsg.className = 'result-msg win';
+            setTimeout(buildGrid, 1200);
+        }
+
+        updateButtons();
+        buildGrid();
+        loadBalance();
+    </script>
+</body>
+</html>

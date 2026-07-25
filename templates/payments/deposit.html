@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Depositar - Royal Casino Core</title>
+    <script src="https://js.stripe.com/v3/"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Roboto, Tahoma, sans-serif;
+            background: radial-gradient(circle at 20% 0%, #2B028C 0%, transparent 45%),
+                        radial-gradient(circle at 100% 30%, #F44CFC 0%, transparent 35%),
+                        #0E000E;
+            min-height: 100vh;
+            color: #fff;
+        }
+        .screen { max-width: 480px; margin: 0 auto; min-height: 100vh; padding: 20px 18px 40px; }
+        .back-link { display: inline-flex; align-items: center; gap: 6px; color: #cfcbe8; text-decoration: none; font-size: 0.85rem; margin-bottom: 14px; }
+
+        .title { text-align: center; font-size: 1.4rem; font-weight: 800; font-style: italic;
+            background: linear-gradient(90deg, #01F9BE, #00A8D4);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; margin-bottom: 4px; }
+        .subtitle { text-align: center; font-size: 0.78rem; color: #cfcbe8; margin-bottom: 18px; }
+
+        .section { border: 1px solid #46407C; border-radius: 16px; padding: 16px; background: rgba(20,5,40,0.55); margin-bottom: 14px; }
+        .section-label { font-size: 0.75rem; font-weight: 700; color: #FFD36E; margin-bottom: 10px; }
+
+        .amount-input {
+            width: 100%; padding: 14px; text-align: center; font-size: 1.4rem; font-weight: 800;
+            background: rgba(255,255,255,0.06); border: 1px solid #46407C; border-radius: 12px; color: #fff; margin-bottom: 10px;
+        }
+        .amount-input:focus { outline: none; border-color: #01F9BE; }
+
+        .quick-amounts { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+        .quick-amount-btn {
+            padding: 8px; border-radius: 10px; border: 1px solid #46407C; background: rgba(255,255,255,0.04);
+            color: #fff; font-weight: 700; font-size: 0.82rem; cursor: pointer;
+        }
+        .quick-amount-btn.active { background: #01F9BE; color: #052015; border-color: #01F9BE; }
+
+        #card-element { padding: 12px 14px; background: rgba(255,255,255,0.06); border: 1px solid #46407C; border-radius: 10px; }
+        #card-errors { color: #ff9ad4; font-size: 0.75rem; margin-top: 8px; min-height: 16px; }
+
+        .fee-row { display: flex; justify-content: space-between; font-size: 0.8rem; margin-bottom: 6px; color: #cfcbe8; }
+        .fee-row.total { border-top: 1px solid #46407C; padding-top: 8px; font-weight: 800; color: #01F9BE; font-size: 0.9rem; }
+
+        .security-info { font-size: 0.7rem; color: #9c96c4; text-align: center; margin-bottom: 14px; }
+
+        .btn-submit {
+            width: 100%; padding: 14px; border: 1px solid #B5FEFA; border-radius: 12px;
+            background: conic-gradient(from 55deg, #01F9BE, #02F789, #00A8D4, #01F9BE);
+            color: #052015; font-weight: 800; font-size: 1rem; cursor: pointer; margin-bottom: 10px;
+        }
+        .btn-submit:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        .message { padding: 10px 14px; border-radius: 10px; font-size: 0.8rem; text-align: center; margin-bottom: 14px; display: none; }
+        .message.error { background: rgba(244,76,252,0.12); border: 1px solid #F44CFC; color: #ff9ad4; }
+        .message.success { background: rgba(1,249,190,0.1); border: 1px solid #01F9BE; color: #01F9BE; }
+        .message.show { display: block; }
+    </style>
+</head>
+<body>
+    {% csrf_token %}
+    <div class="screen">
+        <a href="/lobby/" class="back-link">‹ Volver al lobby</a>
+        <div class="title">💰 DEPOSITAR</div>
+        <div class="subtitle">Recarga tu billetera de forma segura con Stripe</div>
+
+        <div id="message" class="message"></div>
+
+        <div class="section">
+            <div class="section-label">CANTIDAD A DEPOSITAR (USD)</div>
+            <input type="number" class="amount-input" id="amount" min="1" max="10000" step="1" value="100">
+            <div class="quick-amounts">
+                <button type="button" class="quick-amount-btn" data-amount="50">$50</button>
+                <button type="button" class="quick-amount-btn active" data-amount="100">$100</button>
+                <button type="button" class="quick-amount-btn" data-amount="500">$500</button>
+            </div>
+        </div>
+
+        <div class="section">
+            <div class="section-label">💳 DATOS DE TARJETA</div>
+            <div id="card-element"></div>
+            <div id="card-errors"></div>
+        </div>
+
+        <div class="fee-row"><span>Depósito:</span><span id="feeAmount">$100.00</span></div>
+        <div class="fee-row total"><span>Total a pagar:</span><span id="feeTotal">$100.00</span></div>
+
+        <div class="security-info">🔒 Procesado de forma segura por Stripe. Nunca almacenamos tu tarjeta.</div>
+
+        <button class="btn-submit" id="submitBtn">CONFIRMAR DEPÓSITO</button>
+    </div>
+
+    <script>
+        const stripePublicKey = '{{ stripe_key|default:"" }}';
+        let stripe, cardElement;
+        let selectedAmount = 100;
+
+        function initStripe() {
+            if (!window.Stripe) {
+                document.getElementById('card-errors').textContent = 'No se pudo cargar Stripe. Verifica tu conexión.';
+                return;
+            }
+            stripe = Stripe(stripePublicKey || 'pk_test_51234567890');
+            const elements = stripe.elements();
+            cardElement = elements.create('card', {
+                style: { base: { color: '#fff', fontSize: '16px', '::placeholder': { color: '#9c96c4' } } }
+            });
+            cardElement.mount('#card-element');
+            cardElement.on('change', (event) => {
+                document.getElementById('card-errors').textContent = event.error ? event.error.message : '';
+            });
+        }
+
+        document.querySelectorAll('.quick-amount-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                selectedAmount = parseFloat(btn.dataset.amount);
+                document.getElementById('amount').value = selectedAmount;
+                updateFees();
+                document.querySelectorAll('.quick-amount-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+            });
+        });
+
+        document.getElementById('amount').addEventListener('input', updateFees);
+
+        function updateFees() {
+            selectedAmount = parseFloat(document.getElementById('amount').value) || 0;
+            document.getElementById('feeAmount').textContent = `$${selectedAmount.toFixed(2)}`;
+            document.getElementById('feeTotal').textContent = `$${selectedAmount.toFixed(2)}`;
+        }
+
+        function showMessage(text, type) {
+            const el = document.getElementById('message');
+            el.textContent = text;
+            el.className = `message show ${type}`;
+        }
+
+        async function processDeposit() {
+            const submitBtn = document.getElementById('submitBtn');
+            if (selectedAmount < 1 || selectedAmount > 10000) {
+                showMessage('El monto debe estar entre $1 y $10,000', 'error');
+                return;
+            }
+
+            submitBtn.disabled = true;
+            const csrfToken = getCookie('csrftoken');
+
+            try {
+                const intentRes = await fetch('/api/payments/create_deposit_intent/', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken },
+                    body: JSON.stringify({ amount: selectedAmount, payment_method_type: 'card' })
+                });
+                const intentData = await intentRes.json();
+
+                if (!intentRes.ok) {
+                    showMessage(intentData.error || 'Error al iniciar el depósito. Verifica que las claves de Stripe estén configuradas.', 'error');
+                    submitBtn.disabled = false;
+                    return;
+                }
+
+                const { error, paymentIntent } = await stripe.confirmCardPayment(intentData.client_secret, {
+                    payment_method: { card: cardElement }
+                });
+
+                if (error) {
+                    showMessage(error.message, 'error');
+                    submitBtn.disabled = false;
+                    return;
+                }
+
+                const confirmRes = await fetch('/api/payments/confirm_deposit/', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken },
+                    body: JSON.stringify({ payment_intent_id: paymentIntent.id })
+                });
+                const confirmData = await confirmRes.json();
+
+                if (confirmRes.ok) {
+                    showMessage(`¡Depósito exitoso! Nuevo balance: $${confirmData.new_balance.toFixed(2)}`, 'success');
+                    setTimeout(() => window.location.href = '/lobby/', 2000);
+                } else {
+                    showMessage(confirmData.error || 'Error al confirmar el depósito', 'error');
+                    submitBtn.disabled = false;
+                }
+            } catch (e) {
+                showMessage('Error de conexión', 'error');
+                submitBtn.disabled = false;
+            }
+        }
+
+        function getCookie(name) {
+            const value = `; ${document.cookie}`;
+            const parts = value.split(`; ${name}=`);
+            if (parts.length === 2) return parts.pop().split(';').shift();
+            return '';
+        }
+
+        document.getElementById('submitBtn').addEventListener('click', processDeposit);
+        initStripe();
+        updateFees();
+    </script>
+</body>
+</html>

@@ -270,8 +270,9 @@
             padding: 8px 6px; background: #0D072C; border: 1px solid #72378B; border-radius: 24px;
             z-index: 50;
         }
-        .nav-item { display: flex; align-items: center; justify-content: center; flex: 1; }
-        .nav-item img { height: 40px; width: auto; filter: grayscale(1) brightness(1.6) opacity(0.55); }
+        .nav-item { display: flex; flex-direction: column; align-items: center; justify-content: center; flex: 1; gap: 3px; }
+        .nav-item img { height: 28px; width: auto; filter: grayscale(1) brightness(1.6) opacity(0.55); }
+        .nav-item .nav-label { font-size: 0.62rem; font-weight: 700; color: #9c96c4; letter-spacing: 0.01em; }
     </style>
 </head>
 <body>
@@ -344,10 +345,10 @@
     </div>
 
     <div class="bottom-nav">
-        <a href="/lobby/" class="nav-item"><img src="/static/images/icons/nav_lobby.png" alt="Lobby"></a>
-        <a href="/promos/" class="nav-item"><img src="/static/images/icons/nav_promos.png" alt="Promos"></a>
-        <a href="/vip/" class="nav-item"><img src="/static/images/icons/nav_vip.png" alt="VIP"></a>
-        <a href="/profile/" class="nav-item"><img src="/static/images/icons/nav_perfil.png" alt="Perfil"></a>
+        <a href="/lobby/" class="nav-item"><img src="/static/images/icons/nav_lobby.png" alt="Lobby"><span class="nav-label">Lobby</span></a>
+        <a href="/promos/" class="nav-item"><img src="/static/images/icons/nav_promos.png" alt="Promos"><span class="nav-label">Promos</span></a>
+        <a href="/vip/" class="nav-item"><img src="/static/images/icons/nav_vip.png" alt="VIP"><span class="nav-label">VIP</span></a>
+        <a href="/profile/" class="nav-item"><img src="/static/images/icons/nav_perfil.png" alt="Perfil"><span class="nav-label">Perfil</span></a>
     </div>
 
     <script>

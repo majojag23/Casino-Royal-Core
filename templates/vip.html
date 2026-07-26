@@ -125,17 +125,19 @@
             z-index: 50;
         }
         .nav-item {
-            display: flex; align-items: center; justify-content: center; flex: 1;
+            display: flex; flex-direction: column; align-items: center; justify-content: center; flex: 1; gap: 3px;
             padding: 4px 2px; border: 1.5px solid transparent; border-radius: 14px;
             transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
         }
-        .nav-item img { height: clamp(26px, 9vw, 40px); width: auto; max-width: 100%; filter: grayscale(1) brightness(1.6) opacity(0.55); transition: filter 0.2s; }
+        .nav-item img { height: clamp(20px, 6.5vw, 28px); width: auto; max-width: 100%; filter: grayscale(1) brightness(1.6) opacity(0.55); transition: filter 0.2s; }
+        .nav-item .nav-label { font-size: clamp(0.52rem, 2.3vw, 0.66rem); font-weight: 700; color: #9c96c4; letter-spacing: 0.01em; transition: color 0.2s; }
         .nav-item.active {
             background: rgba(244,76,252,0.14);
             border-color: #F44CFC;
             box-shadow: 0 0 14px rgba(244,76,252,0.5);
         }
         .nav-item.active img { filter: none; }
+        .nav-item.active .nav-label { color: #F44CFC; }
 
         @media (max-width: 340px) {
             .navbar-brand .core { display: none; }
@@ -329,10 +331,10 @@
     </div>
 
     <div class="bottom-nav">
-        <a href="/lobby/" class="nav-item"><img src="/static/images/icons/nav_lobby.png" alt="Lobby"></a>
-        <a href="/promos/" class="nav-item"><img src="/static/images/icons/nav_promos.png" alt="Promos"></a>
-        <a href="/vip/" class="nav-item active"><img src="/static/images/icons/nav_vip.png" alt="VIP"></a>
-        <a href="/profile/" class="nav-item"><img src="/static/images/icons/nav_perfil.png" alt="Perfil"></a>
+        <a href="/lobby/" class="nav-item"><img src="/static/images/icons/nav_lobby.png" alt="Lobby"><span class="nav-label">Lobby</span></a>
+        <a href="/promos/" class="nav-item"><img src="/static/images/icons/nav_promos.png" alt="Promos"><span class="nav-label">Promos</span></a>
+        <a href="/vip/" class="nav-item active"><img src="/static/images/icons/nav_vip.png" alt="VIP"><span class="nav-label">VIP</span></a>
+        <a href="/profile/" class="nav-item"><img src="/static/images/icons/nav_perfil.png" alt="Perfil"><span class="nav-label">Perfil</span></a>
     </div>
 
     <script>

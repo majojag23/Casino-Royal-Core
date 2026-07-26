@@ -872,6 +872,14 @@ class PandaMinesGame:
     ya es matemáticamente exacta, el RTP resultante es EXACTAMENTE (1 - HOUSE_EDGE) sin
     importar cuántas celdas revele el jugador ni cuándo decida retirarse — así la casa
     siempre mantiene su margen garantizado, jugada tras jugada.
+
+    Nota histórica: hubo una celda "diamante" que duplicaba el multiplicador al encontrarla.
+    Se quitó por completo porque rompía la equidad del juego: aunque el valor esperado
+    PROMEDIADO sobre encontrar/no encontrar el diamante seguía dando (1-HOUSE_EDGE), el
+    jugador SÍ ve en vivo si lo encontró (is_diamond en la respuesta) y puede decidir cobrar
+    justo en ese momento para quedarse solo con el caso favorable. Simulado con la estrategia
+    obvia "revelar hasta encontrar el diamante y cobrar de inmediato": RTP de 124%-173% según
+    la cantidad de minas, es decir, el jugador tenía ventaja garantizada sobre la casa.
     """
 
     GRID_SIZE = 5  # 5x5 = 25 celdas
@@ -880,37 +888,20 @@ class PandaMinesGame:
     MIN_MINES = 1
     MAX_MINES = TOTAL_CELLS - 1
 
-    # Una celda segura al azar (nunca una mina) es el "diamante": si el jugador la revela,
-    # duplica el multiplicador de esa partida en adelante (si iba a ganar 2x, gana 4x).
-    #
-    # OJO: duplicar directamente el multiplicador de odds-exactas rompe la equidad del juego,
-    # porque revelar más celdas hace más probable encontrar el diamante Y a la vez ya paga más
-    # por sí solo — combinados, el premio se dispara sin límite (verificado por simulación: el
-    # RTP se disparaba a 130-140%, insostenible para la casa). Para que el bono sea seguro sin
-    # importar cuántas celdas revele el jugador, se reparte el mismo "pozo justo" (fair_multiplier
-    # * (1-margen)) entre el caso con diamante y sin diamante, ponderado por la probabilidad real
-    # de que el diamante ya haya aparecido entre las celdas reveladas. Así el valor esperado total
-    # en cualquier punto de cobro sigue siendo EXACTAMENTE (1 - HOUSE_EDGE), con o sin diamante.
-    DIAMOND_MULTIPLIER = Decimal('2')
-
     @staticmethod
     def generate_grid(mine_count: int) -> Dict[str, Any]:
-        """Genera un grid con minas escondidas y una celda diamante (bono x2) entre las seguras"""
+        """Genera un grid con minas escondidas"""
         mine_count = max(PandaMinesGame.MIN_MINES, min(int(mine_count), PandaMinesGame.MAX_MINES))
         all_cells = list(range(PandaMinesGame.TOTAL_CELLS))
         mines = random.sample(all_cells, mine_count)
-        safe_cells = [c for c in all_cells if c not in mines]
-        diamond_cell = random.choice(safe_cells)
         return {
             'mines': mines,
             'mine_count': mine_count,
-            'diamond_cell': diamond_cell,
-            'diamond_found': False,
             'revealed': []
         }
 
     @staticmethod
-    def calculate_multiplier(mine_count: int, cells_revealed: int, diamond_found: bool = False) -> Decimal:
+    def calculate_multiplier(mine_count: int, cells_revealed: int) -> Decimal:
         """Multiplicador justo (odds exactas de supervivencia) menos el margen de la casa"""
         if cells_revealed <= 0:
             return Decimal('1.0')
@@ -922,15 +913,7 @@ class PandaMinesGame:
             Decimal(math.comb(PandaMinesGame.TOTAL_CELLS, cells_revealed))
             / Decimal(math.comb(safe_cells, cells_revealed))
         )
-        fair_pool = fair_multiplier * (Decimal('1') - PandaMinesGame.HOUSE_EDGE)
-
-        # Probabilidad real de que el diamante ya esté entre las celdas reveladas
-        p_diamond = Decimal(cells_revealed) / Decimal(safe_cells) if safe_cells > 0 else Decimal('0')
-        base_multiplier = fair_pool / (Decimal('1') + p_diamond)
-
-        if diamond_found:
-            return base_multiplier * PandaMinesGame.DIAMOND_MULTIPLIER
-        return base_multiplier
+        return fair_multiplier * (Decimal('1') - PandaMinesGame.HOUSE_EDGE)
 
     @staticmethod
     def reveal_cell(grid: Dict, cell_id: int) -> Dict[str, Any]:
@@ -943,27 +926,23 @@ class PandaMinesGame:
                 'game_over': True
             }
 
-        is_diamond = (cell_id == grid['diamond_cell'])
         if cell_id not in grid['revealed']:
             grid['revealed'].append(cell_id)
-        if is_diamond:
-            grid['diamond_found'] = True
 
         cells_revealed = len(grid['revealed'])
         safe_cells = PandaMinesGame.TOTAL_CELLS - grid['mine_count']
-        multiplier = PandaMinesGame.calculate_multiplier(grid['mine_count'], cells_revealed, grid['diamond_found'])
+        multiplier = PandaMinesGame.calculate_multiplier(grid['mine_count'], cells_revealed)
         all_safe_found = cells_revealed >= safe_cells
 
         next_multiplier = None
         if not all_safe_found:
             next_multiplier = float(round(
-                PandaMinesGame.calculate_multiplier(grid['mine_count'], cells_revealed + 1, grid['diamond_found']), 4
+                PandaMinesGame.calculate_multiplier(grid['mine_count'], cells_revealed + 1), 4
             ))
 
         return {
             'hit_mine': False,
             'cell_id': cell_id,
-            'is_diamond': is_diamond,
             'cells_revealed': cells_revealed,
             'multiplier': float(round(multiplier, 4)),
             'next_multiplier': next_multiplier,
@@ -975,9 +954,7 @@ class PandaMinesGame:
     def cash_out(grid: Dict, bet: Decimal) -> Dict[str, Any]:
         """Cobra la apuesta al multiplicador actual (único momento en que se paga)"""
         cells_revealed = len(grid['revealed'])
-        multiplier = PandaMinesGame.calculate_multiplier(
-            grid['mine_count'], cells_revealed, grid.get('diamond_found', False)
-        )
+        multiplier = PandaMinesGame.calculate_multiplier(grid['mine_count'], cells_revealed)
         payout = GameLogic.calculate_payout(bet, float(multiplier)) if cells_revealed > 0 else Decimal('0')
         profit_loss = GameLogic.calculate_profit(payout, bet)
 

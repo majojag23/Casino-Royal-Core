@@ -239,7 +239,7 @@ class GameViewSet(viewsets.ViewSet):
                 new_grid_id = uuid.uuid4().hex
                 request.session[f'panda_mines_{new_grid_id}'] = grid
 
-                next_multiplier = PandaMinesGame.calculate_multiplier(grid['mine_count'], 1, False)
+                next_multiplier = PandaMinesGame.calculate_multiplier(grid['mine_count'], 1)
 
                 return Response({
                     'grid_id': new_grid_id,

@@ -226,7 +226,6 @@
         const CELL_LOCKED = '/static/images/mines/cell_locked.png?v=3';
         const CELL_PANDA = '/static/images/mines/cell_panda.png?v=3';
         const CELL_BOMB = '/static/images/mines/cell_bomb.png?v=3';
-        const CELL_DIAMOND = '/static/images/mines/cell_diamond.png?v=3';
 
         let betAmount = 20;
         let selectedMines = 5;
@@ -379,7 +378,7 @@
                 return;
             }
 
-            cellEl.innerHTML = `<img src="${gr.is_diamond ? CELL_DIAMOND : CELL_PANDA}" alt="">`;
+            cellEl.innerHTML = `<img src="${CELL_PANDA}" alt="">`;
             cellEl.classList.add('disabled');
             currentMultiplier = gr.multiplier;
             document.getElementById('multDisplay').textContent = gr.multiplier.toFixed(2);
@@ -395,9 +394,6 @@
                 resultMsg.textContent = `¡Encontraste todos los pandas! Ganaste $${gr.payout.toFixed(2)} (${gr.multiplier.toFixed(2)}x)`;
                 resultMsg.className = 'result-msg win';
                 setTimeout(buildGrid, 1200);
-            } else if (gr.is_diamond) {
-                resultMsg.textContent = `¡Diamante! Se duplicó tu premio. Multiplicador actual: ${gr.multiplier.toFixed(2)}x`;
-                resultMsg.className = 'result-msg win';
             } else {
                 resultMsg.textContent = `Multiplicador actual: ${gr.multiplier.toFixed(2)}x`;
                 resultMsg.className = 'result-msg win';
@@ -441,7 +437,7 @@
             '/static/images/characters/panda_mines_btn_retiro.png',
             '/static/images/mines/board_panda.png',
             '/static/images/characters/panda_mascot.png',
-            CELL_LOCKED, CELL_PANDA, CELL_BOMB, CELL_DIAMOND
+            CELL_LOCKED, CELL_PANDA, CELL_BOMB
         ];
 
         function preloadImages(urls) {

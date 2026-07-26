@@ -45,7 +45,9 @@ class AuthViewSet(viewsets.ViewSet):
             }, status=status.HTTP_400_BAD_REQUEST)
 
         try:
-            user = CustomUser.objects.get(email=email)
+            user = CustomUser.objects.filter(email__iexact=email).order_by('-created_at').first()
+            if user is None:
+                raise CustomUser.DoesNotExist
             if user.check_password(password):
                 # Verificar bloqueo de cuenta
                 if user.is_account_locked():

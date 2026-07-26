@@ -36,6 +36,11 @@ class UserRegisterSerializer(serializers.ModelSerializer):
             'first_name', 'last_name', 'phone', 'date_of_birth'
         ]
 
+    def validate_email(self, value):
+        if CustomUser.objects.filter(email__iexact=value).exists():
+            raise serializers.ValidationError("Ya existe una cuenta registrada con este correo")
+        return value
+
     def validate(self, data):
         if data['password'] != data['password_confirm']:
             raise serializers.ValidationError({"password": "Las contraseñas no coinciden"})

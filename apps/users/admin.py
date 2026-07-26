@@ -37,6 +37,7 @@ class CustomUserAdmin(BaseUserAdmin):
         }),
     )
 
+    readonly_fields = ('created_at', 'updated_at')
     list_display = ('username', 'email', 'balance', 'status', 'created_at')
     list_filter = ('status', 'email_verified', 'document_verified', 'kyc_verified', 'created_at')
     search_fields = ('username', 'email', 'document_number')

@@ -16,15 +16,22 @@
         }
         .screen { max-width: 480px; margin: 0 auto; min-height: 100vh; padding-bottom: 100px; }
         .back-link { display: inline-flex; align-items: center; gap: 6px; padding: 14px 16px; color: #cfcbe8; text-decoration: none; font-size: 0.85rem; }
-        .title-row {
-            text-align: center;
-            font-size: 1.5rem;
-            font-weight: 800;
-            font-style: italic;
-            margin-bottom: 12px;
-            color: #41DBFD;
-            text-shadow: 0 0 12px rgba(65,219,253,0.6);
+        .loading-screen {
+            position: fixed; inset: 0; z-index: 999;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            background: #000114;
+            transition: opacity 0.4s ease;
         }
+        .loading-screen.hide { opacity: 0; pointer-events: none; }
+        .loading-screen .loading-title {
+            font-size: 1.8rem; font-weight: 800; font-style: italic;
+            color: #41DBFD; text-shadow: 0 0 12px rgba(65,219,253,0.6);
+            margin-bottom: 28px; animation: loading-pulse 1.6s ease-in-out infinite;
+        }
+        @keyframes loading-pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.04); } }
+        .loading-spinner { width: 46px; height: 46px; border: 4px solid rgba(255,255,255,0.15); border-top-color: #41DBFD; border-radius: 50%; animation: loading-spin 0.9s linear infinite; margin-bottom: 14px; }
+        @keyframes loading-spin { to { transform: rotate(360deg); } }
+        .loading-text { font-size: 0.85rem; font-weight: 700; color: #B8F0FF; letter-spacing: 0.08em; }
 
         .history-row { display: flex; justify-content: center; align-items: center; gap: 6px; padding: 0 16px; margin-bottom: 14px; flex-wrap: wrap; }
         .history-row .label { font-size: 0.65rem; color: #9c96c4; margin-right: 4px; }
@@ -206,9 +213,13 @@
 </head>
 <body>
     {% csrf_token %}
+    <div class="loading-screen" id="loadingScreen">
+        <div class="loading-title">CYBER ROLETT</div>
+        <div class="loading-spinner"></div>
+        <div class="loading-text">CARGANDO...</div>
+    </div>
     <div class="screen">
         <a href="/lobby/" class="back-link">‹ Volver al lobby</a>
-        <div class="title-row">CYBER ROLETT</div>
 
         <div class="history-row">
             <span class="label">ÚLTIMOS:</span>
@@ -560,8 +571,33 @@
             }
         }
 
-        buildNumberRows();
-        loadBalance();
+        const PRELOAD_IMAGES = [
+            '/static/images/games/roulette_wheel.png',
+            '/static/images/games/roulette_ball.png',
+            '/static/images/characters/shark_mascot.png'
+        ];
+
+        function preloadImages(urls) {
+            return Promise.all(urls.map(src => new Promise(resolve => {
+                const img = new Image();
+                img.onload = resolve;
+                img.onerror = resolve;
+                img.src = src;
+            })));
+        }
+
+        function hideLoadingScreen() {
+            const el = document.getElementById('loadingScreen');
+            if (!el) return;
+            el.classList.add('hide');
+            setTimeout(() => el.remove(), 400);
+        }
+
+        preloadImages(PRELOAD_IMAGES).then(() => {
+            buildNumberRows();
+            loadBalance();
+            hideLoadingScreen();
+        });
     </script>
 </body>
 </html>

@@ -37,8 +37,18 @@
             border: 1px solid rgba(255,255,255,0.4); background: rgba(0,0,0,0.35);
             color: #fff; font-size: 1rem; cursor: pointer;
         }
-        .title-row { display: flex; align-items: center; justify-content: center; margin: 2px 0 4px; }
-        .title-row img { height: 108px; width: auto; filter: drop-shadow(0 6px 14px rgba(0,0,0,0.7)); }
+        .loading-screen {
+            position: fixed; inset: 0; z-index: 999;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            background: #1a0a2e;
+            transition: opacity 0.4s ease;
+        }
+        .loading-screen.hide { opacity: 0; pointer-events: none; }
+        .loading-screen img.loading-title { max-width: 70%; max-height: 200px; width: auto; height: auto; margin-bottom: 28px; filter: drop-shadow(0 4px 14px rgba(0,0,0,0.6)); animation: loading-pulse 1.6s ease-in-out infinite; }
+        @keyframes loading-pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.04); } }
+        .loading-spinner { width: 46px; height: 46px; border: 4px solid rgba(255,255,255,0.15); border-top-color: #B45CFF; border-radius: 50%; animation: loading-spin 0.9s linear infinite; margin-bottom: 14px; }
+        @keyframes loading-spin { to { transform: rotate(360deg); } }
+        .loading-text { font-size: 0.85rem; font-weight: 700; color: #D9B8FF; letter-spacing: 0.08em; }
 
         .chips-row { display: flex; justify-content: space-between; gap: 6px; padding: 0 14px; margin-bottom: 6px; flex-wrap: wrap; align-items: center; }
         .chip-billetera {
@@ -293,13 +303,15 @@
 </head>
 <body>
     {% csrf_token %}
+    <div class="loading-screen" id="loadingScreen">
+        <img class="loading-title" src="/static/images/characters/bird_blast_title.png" alt="Bird Blast Bonanza">
+        <div class="loading-spinner"></div>
+        <div class="loading-text">CARGANDO...</div>
+    </div>
     <div class="screen">
         <div class="top-row">
             <a href="/lobby/" class="back-link">‹ Volver al lobby</a>
             <button class="sound-btn" id="soundBtn" onclick="toggleSound()">🔊</button>
-        </div>
-        <div class="title-row">
-            <img src="/static/images/characters/bird_blast_title.png" alt="Bird Blast Bonanza">
         </div>
 
         <div class="chips-row">
@@ -829,9 +841,52 @@
             }
         }
 
-        document.getElementById('soundBtn').textContent = muted ? '🔇' : '🔊';
-        renderProximos();
-        loadBalance();
+        const PRELOAD_IMAGES = [
+            '/static/images/characters/bird_blast_title.png',
+            '/static/images/characters/bird_blast_background.png',
+            '/static/images/characters/bird_blast_btn_lanzar.png',
+            '/static/images/characters/bird_blast_btn_cobrar.png',
+            '/static/images/characters/bird_blast_huevo_dorado.png',
+            '/static/images/characters/bird_blast_proximo_azul.png',
+            '/static/images/characters/bird_blast_proximo_rojo.png',
+            '/static/images/characters/bird_blast_proximo_negro.png',
+            '/static/images/symbols/bird_blast_block_dorado.png',
+            '/static/images/symbols/bird_blast_block_cristal.png',
+            '/static/images/symbols/bird_blast_block_cofre.png',
+            '/static/images/symbols/bird_blast_block_comun.png',
+            '/static/images/symbols/bird_blast_block_corona.png',
+            '/static/images/characters/bird_blast_trayectoria.png',
+            '/static/images/characters/bird_blast_catapulta.png',
+            '/static/images/characters/bird_rojo.png',
+            '/static/images/characters/bird_azul.png',
+            '/static/images/characters/bird_negro.png',
+            '/static/images/characters/bird_blast_letrero_ganaste.png',
+            '/static/images/characters/bird_blast_mascot.png',
+            '/static/images/characters/bird_blast_moneda.png'
+        ];
+
+        function preloadImages(urls) {
+            return Promise.all(urls.map(src => new Promise(resolve => {
+                const img = new Image();
+                img.onload = resolve;
+                img.onerror = resolve;
+                img.src = src;
+            })));
+        }
+
+        function hideLoadingScreen() {
+            const el = document.getElementById('loadingScreen');
+            if (!el) return;
+            el.classList.add('hide');
+            setTimeout(() => el.remove(), 400);
+        }
+
+        preloadImages(PRELOAD_IMAGES).then(() => {
+            document.getElementById('soundBtn').textContent = muted ? '🔇' : '🔊';
+            renderProximos();
+            loadBalance();
+            hideLoadingScreen();
+        });
     </script>
 </body>
 </html>

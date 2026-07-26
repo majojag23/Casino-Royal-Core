@@ -4,11 +4,14 @@ from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
+from django.contrib.auth import get_user_model
 from django.db import transaction
 from django.utils import timezone
 from decimal import Decimal
 
 from apps.games.models import GameResult, SlotsJackpot
+
+User = get_user_model()
 from apps.games.game_logic import (
     SlotsGame,
     FarmFestGame,
@@ -53,10 +56,12 @@ class GameViewSet(viewsets.ViewSet):
                 return Response({'error': 'Saldo insuficiente'}, status=status.HTTP_400_BAD_REQUEST)
 
         with transaction.atomic():
+            user = User.objects.select_for_update().get(pk=user.pk)
             if is_free_spin:
                 free_spins_remaining -= 1
             else:
-                user.place_bet(bet_amount)
+                if not user.place_bet(bet_amount):
+                    return Response({'error': 'Saldo insuficiente'}, status=status.HTTP_400_BAD_REQUEST)
                 user.record_wager(bet_amount)
 
             jackpot = SlotsJackpot.get_locked()
@@ -142,10 +147,12 @@ class GameViewSet(viewsets.ViewSet):
                 return Response({'error': 'Saldo insuficiente'}, status=status.HTTP_400_BAD_REQUEST)
 
         with transaction.atomic():
+            user = User.objects.select_for_update().get(pk=user.pk)
             if is_free_spin:
                 free_spins_remaining -= 1
             else:
-                user.place_bet(bet_amount)
+                if not user.place_bet(bet_amount):
+                    return Response({'error': 'Saldo insuficiente'}, status=status.HTTP_400_BAD_REQUEST)
                 user.record_wager(bet_amount)
 
             result = FarmFestGame.spin(bet_amount)
@@ -211,18 +218,19 @@ class GameViewSet(viewsets.ViewSet):
         grid_id = request.data.get('grid_id')
 
         with transaction.atomic():
+            user = User.objects.select_for_update().get(pk=user.pk)
+
             if not grid_id:
                 bet_amount = Decimal(str(request.data.get('bet_amount', '1.0')))
                 mine_count = int(request.data.get('mine_count', 5))
 
                 if bet_amount <= 0:
                     return Response({'error': 'Apuesta inválida'}, status=status.HTTP_400_BAD_REQUEST)
-                if user.balance + user.bonus_balance < bet_amount:
-                    return Response({'error': 'Saldo insuficiente'}, status=status.HTTP_400_BAD_REQUEST)
                 if not (PandaMinesGame.MIN_MINES <= mine_count <= PandaMinesGame.MAX_MINES):
                     return Response({'error': 'Cantidad de minas inválida'}, status=status.HTTP_400_BAD_REQUEST)
 
-                user.place_bet(bet_amount)
+                if not user.place_bet(bet_amount):
+                    return Response({'error': 'Saldo insuficiente'}, status=status.HTTP_400_BAD_REQUEST)
                 user.record_wager(bet_amount)
 
                 grid = PandaMinesGame.generate_grid(mine_count)
@@ -311,6 +319,7 @@ class GameViewSet(viewsets.ViewSet):
             return Response({'error': 'Revela al menos una celda antes de retirar'}, status=status.HTTP_400_BAD_REQUEST)
 
         with transaction.atomic():
+            user = User.objects.select_for_update().get(pk=user.pk)
             bet_amount = Decimal(grid['bet_amount'])
             result = PandaMinesGame.cash_out(grid, bet_amount)
             request.session.pop(session_key, None)
@@ -341,15 +350,16 @@ class GameViewSet(viewsets.ViewSet):
         round_id = request.data.get('round_id')
 
         with transaction.atomic():
+            user = User.objects.select_for_update().get(pk=user.pk)
+
             if not round_id:
                 bet_amount = Decimal(str(request.data.get('bet_amount', '1.0')))
 
                 if bet_amount <= 0:
                     return Response({'error': 'Apuesta inválida'}, status=status.HTTP_400_BAD_REQUEST)
-                if user.balance + user.bonus_balance < bet_amount:
-                    return Response({'error': 'Saldo insuficiente'}, status=status.HTTP_400_BAD_REQUEST)
 
-                user.place_bet(bet_amount)
+                if not user.place_bet(bet_amount):
+                    return Response({'error': 'Saldo insuficiente'}, status=status.HTTP_400_BAD_REQUEST)
                 user.record_wager(bet_amount)
 
                 round_state = DuckRushGame.start_round(bet_amount)
@@ -412,6 +422,7 @@ class GameViewSet(viewsets.ViewSet):
             return Response({'error': 'Acertá al menos un pato antes de retirar'}, status=status.HTTP_400_BAD_REQUEST)
 
         with transaction.atomic():
+            user = User.objects.select_for_update().get(pk=user.pk)
             bet_amount = Decimal(round_state['bet_amount'])
             result = DuckRushGame.cash_out(round_state)
             request.session.pop(session_key, None)
@@ -442,15 +453,16 @@ class GameViewSet(viewsets.ViewSet):
         round_id = request.data.get('round_id')
 
         with transaction.atomic():
+            user = User.objects.select_for_update().get(pk=user.pk)
+
             if not round_id:
                 bet_amount = Decimal(str(request.data.get('bet_amount', '1.0')))
 
                 if bet_amount <= 0:
                     return Response({'error': 'Apuesta inválida'}, status=status.HTTP_400_BAD_REQUEST)
-                if user.balance + user.bonus_balance < bet_amount:
-                    return Response({'error': 'Saldo insuficiente'}, status=status.HTTP_400_BAD_REQUEST)
 
-                user.place_bet(bet_amount)
+                if not user.place_bet(bet_amount):
+                    return Response({'error': 'Saldo insuficiente'}, status=status.HTTP_400_BAD_REQUEST)
                 user.record_wager(bet_amount)
 
                 round_state = GoldenSlingRushGame.start_round(bet_amount)
@@ -509,6 +521,7 @@ class GameViewSet(viewsets.ViewSet):
             return Response({'error': 'Lanzá al menos una vez antes de retirar'}, status=status.HTTP_400_BAD_REQUEST)
 
         with transaction.atomic():
+            user = User.objects.select_for_update().get(pk=user.pk)
             bet_amount = Decimal(round_state['bet_amount'])
             result = GoldenSlingRushGame.cash_out(round_state)
             request.session.pop(session_key, None)
@@ -560,11 +573,11 @@ class GameViewSet(viewsets.ViewSet):
 
         if total_bet <= 0:
             return Response({'error': 'Apuesta inválida'}, status=status.HTTP_400_BAD_REQUEST)
-        if user.balance + user.bonus_balance < total_bet:
-            return Response({'error': 'Saldo insuficiente'}, status=status.HTTP_400_BAD_REQUEST)
 
         with transaction.atomic():
-            user.place_bet(total_bet)
+            user = User.objects.select_for_update().get(pk=user.pk)
+            if not user.place_bet(total_bet):
+                return Response({'error': 'Saldo insuficiente'}, status=status.HTTP_400_BAD_REQUEST)
             user.record_wager(total_bet)
 
             number = RouletteGame.spin_wheel()
@@ -633,11 +646,11 @@ class GameViewSet(viewsets.ViewSet):
 
         if bet_amount <= 0:
             return Response({'error': 'Apuesta inválida'}, status=status.HTTP_400_BAD_REQUEST)
-        if user.balance + user.bonus_balance < bet_amount:
-            return Response({'error': 'Saldo insuficiente'}, status=status.HTTP_400_BAD_REQUEST)
 
         with transaction.atomic():
-            user.place_bet(bet_amount)
+            user = User.objects.select_for_update().get(pk=user.pk)
+            if not user.place_bet(bet_amount):
+                return Response({'error': 'Saldo insuficiente'}, status=status.HTTP_400_BAD_REQUEST)
             user.record_wager(bet_amount)
 
             crash_point = GoldenJetGame.generate_crash_point()
@@ -697,6 +710,7 @@ class GameViewSet(viewsets.ViewSet):
             return Response({'error': 'No hay un vuelo activo con ese ID'}, status=status.HTTP_400_BAD_REQUEST)
 
         with transaction.atomic():
+            user = User.objects.select_for_update().get(pk=user.pk)
             crash_point = Decimal(round_data['crash_point'])
             bet_amount = Decimal(round_data['bet_amount'])
             crash_time = GoldenJetGame.crash_time_seconds(crash_point)
@@ -742,11 +756,13 @@ class GameViewSet(viewsets.ViewSet):
         user = request.user
         bet_amount = Decimal(str(request.data.get('bet_amount', '1.0')))
 
-        if user.balance + user.bonus_balance < bet_amount:
-            return Response({'error': 'Saldo insuficiente'}, status=status.HTTP_400_BAD_REQUEST)
+        if bet_amount <= 0:
+            return Response({'error': 'Apuesta inválida'}, status=status.HTTP_400_BAD_REQUEST)
 
         with transaction.atomic():
-            user.place_bet(bet_amount)
+            user = User.objects.select_for_update().get(pk=user.pk)
+            if not user.place_bet(bet_amount):
+                return Response({'error': 'Saldo insuficiente'}, status=status.HTTP_400_BAD_REQUEST)
             user.record_wager(bet_amount)
 
             result = CyberRoulettGame.spin(bet_amount)
@@ -786,11 +802,13 @@ class GameViewSet(viewsets.ViewSet):
         bet_amount = Decimal(str(request.data.get('bet_amount', '1.0')))
         character = request.data.get('character', 'wizard')
 
-        if user.balance + user.bonus_balance < bet_amount:
-            return Response({'error': 'Saldo insuficiente'}, status=status.HTTP_400_BAD_REQUEST)
+        if bet_amount <= 0:
+            return Response({'error': 'Apuesta inválida'}, status=status.HTTP_400_BAD_REQUEST)
 
         with transaction.atomic():
-            user.place_bet(bet_amount)
+            user = User.objects.select_for_update().get(pk=user.pk)
+            if not user.place_bet(bet_amount):
+                return Response({'error': 'Saldo insuficiente'}, status=status.HTTP_400_BAD_REQUEST)
             user.record_wager(bet_amount)
 
             result = PersonajesGame.play(bet_amount, character)
@@ -842,14 +860,13 @@ class GameViewSet(viewsets.ViewSet):
             if bet_amount <= 0:
                 return Response({'error': 'Apuesta inválida'}, status=status.HTTP_400_BAD_REQUEST)
 
-            if user.balance + user.bonus_balance < bet_amount:
-                return Response({'error': 'Saldo insuficiente'}, status=status.HTTP_400_BAD_REQUEST)
-
         with transaction.atomic():
+            user = User.objects.select_for_update().get(pk=user.pk)
             if is_free_spin:
                 free_spins_remaining -= 1
             else:
-                user.place_bet(bet_amount)
+                if not user.place_bet(bet_amount):
+                    return Response({'error': 'Saldo insuficiente'}, status=status.HTTP_400_BAD_REQUEST)
                 user.record_wager(bet_amount)
 
             result = DragonFruitGame.spin(bet_amount, free_mode=is_free_spin)
@@ -926,14 +943,13 @@ class GameViewSet(viewsets.ViewSet):
             if bet_amount <= 0:
                 return Response({'error': 'Apuesta inválida'}, status=status.HTTP_400_BAD_REQUEST)
 
-            if user.balance + user.bonus_balance < bet_amount:
-                return Response({'error': 'Saldo insuficiente'}, status=status.HTTP_400_BAD_REQUEST)
-
         with transaction.atomic():
+            user = User.objects.select_for_update().get(pk=user.pk)
             if is_free_spin:
                 free_spins_remaining -= 1
             else:
-                user.place_bet(bet_amount)
+                if not user.place_bet(bet_amount):
+                    return Response({'error': 'Saldo insuficiente'}, status=status.HTTP_400_BAD_REQUEST)
                 user.record_wager(bet_amount)
 
             result = TotemFallsGame.spin(bet_amount)
@@ -1010,14 +1026,13 @@ class GameViewSet(viewsets.ViewSet):
             if bet_amount <= 0:
                 return Response({'error': 'Apuesta inválida'}, status=status.HTTP_400_BAD_REQUEST)
 
-            if user.balance + user.bonus_balance < bet_amount:
-                return Response({'error': 'Saldo insuficiente'}, status=status.HTTP_400_BAD_REQUEST)
-
         with transaction.atomic():
+            user = User.objects.select_for_update().get(pk=user.pk)
             if is_free_spin:
                 free_spins_remaining -= 1
             else:
-                user.place_bet(bet_amount)
+                if not user.place_bet(bet_amount):
+                    return Response({'error': 'Saldo insuficiente'}, status=status.HTTP_400_BAD_REQUEST)
                 user.record_wager(bet_amount)
 
             result = FrozenAgeGame.spin(bet_amount)
